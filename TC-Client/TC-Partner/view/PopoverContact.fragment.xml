@@ -1,0 +1,37 @@
+<core:FragmentDefinition
+	xmlns="sap.m"
+	xmlns:core="sap.ui.core"
+	xmlns:layout="sap.ui.layout"
+	xmlns:form="sap.ui.layout.form">
+	<Popover	
+		class="sapUiContentPadding"
+		placement="{popoverContactData>/Placement}" 
+		contentWidth="500px"
+		modal="true">
+		<customHeader>
+			<Bar>
+				<contentMiddle>
+					<Text text="{popoverContactData>/Title}" />
+				</contentMiddle>
+			</Bar>
+		</customHeader>
+		<form:SimpleForm>
+			<form:content>
+				<Label text="{i18n>NameTextLable}"/>
+				<Text text="{popoverContactData>/Contact}"/>
+				<Label text="{i18n>EmailTextLable}"/>
+				<Text text="{popoverContactData>/Email}"/>
+				<Label text="{i18n>PhoneTextLable}"/>
+				<Text text="{popoverContactData>/Phone}" />
+			</form:content>
+		</form:SimpleForm>
+		<footer>
+			<Toolbar>
+				<ToolbarSpacer/>
+				<Button
+					text="{i18n>CloseButton}"
+					press="handleClosePopoverContact" />
+			</Toolbar>
+		</footer>
+	</Popover>
+</core:FragmentDefinition>

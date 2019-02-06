@@ -1,0 +1,7 @@
+<mvc:View 
+    height="100%"
+	controllerName="oem-customer.controller.App"
+	xmlns:mvc="sap.ui.core.mvc"
+	xmlns="sap.m">
+	<App id="app"/>
+</mvc:View>

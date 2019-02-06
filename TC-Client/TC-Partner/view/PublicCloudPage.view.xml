@@ -1,0 +1,59 @@
+<mvc:View
+	controllerName="oem-partner.controller.PublicCloudPage"
+	xmlns="sap.m"
+    xmlns:mvc="sap.ui.core.mvc"
+	xmlns:form="sap.ui.layout.form"
+    xmlns:core="sap.ui.core">
+	<Page showHeader="false">
+		<content>
+			<form:SimpleForm
+				editable="true"
+				layout="ResponsiveGridLayout"
+				title="{i18n>PublicCloudSetup_Title}"
+				labelSpanXL="2"
+				labelSpanL="2"
+				labelSpanM="2"
+				labelSpanS="2"
+				adjustLabelSpan="false"
+				emptySpanXL="6"
+				emptySpanL="6"
+				emptySpanM="6"
+				emptySpanS="6"
+				columnsXL="1"
+				columnsL="1"
+				columnsM="1"
+				singleContainerFullSize="false">
+				<form:content>
+                    <Label text="{i18n>DomainTextLable}" />
+					<Text text="{publicCloudData>/DomainName}" />
+					<Label text="{i18n>ResellerTextLable}" />
+                    <Select forceSelection="false"
+                        items="{
+                            path: 'publicCloudCombo>/Resellers',
+                            type: 'sap.ui.model.type.Integer',
+                            sorter: {
+                                path: 'Name'
+                            }
+                        }"
+                        selectedKey="{publicCloudData>/Reseller_Id}"
+                        change="onChangeReseller">
+                        <core:Item key="{publicCloudCombo>ID}" text="{publicCloudCombo>Name}" />
+                    </Select>
+				</form:content>
+			</form:SimpleForm>
+        </content>
+		<footer>
+			<OverflowToolbar>
+				<ToolbarSpacer/>
+				<Button 
+					text="{i18n>SaveButton}" 
+					press="onSave" 
+					visible="{publicCloudView>/SaveButtonVisible}" 
+					type="Accept" />
+				<Button 
+					text="{i18n>CancelButton}" 
+					press="onCancel" />
+			</OverflowToolbar>
+		</footer>
+	</Page>
+</mvc:View>

@@ -1,0 +1,155 @@
+<core:FragmentDefinition
+		height="100%"
+		xmlns:layout="sap.ui.layout"
+		xmlns:form="sap.ui.layout.form"
+		xmlns:core="sap.ui.core"
+		xmlns="sap.m">
+		<Page id="PartnerReviewPage" showHeader="false">
+			<content>
+                <form:SimpleForm
+						title="1. {i18n>PackageStepTitle}"
+						editable="false"
+						layout="ResponsiveGridLayout">
+					<form:content>
+						<Table 
+                            noDataText="{i18n>PackagesNoData}"
+                            items="{PartnerData>/Packages}" >
+                            <headerToolbar>
+                                <OverflowToolbar>
+                                    <Title text="{partnerView>/PackagesTableTitle}" level="H2" />
+                                </OverflowToolbar>
+                            </headerToolbar>
+                            <columns>
+                                <Column
+                                    width="10%">
+                                    <Text text="{i18n>PackageIDColumnName}" />
+                                </Column>
+                                <Column
+                                    width="30%">
+                                    <Text text="{i18n>PackageNameColumnName}" />
+                                </Column>
+                                <Column>
+                                    <Text text="{i18n>PackageDescColumnName}" />
+                                </Column>
+                            </columns>
+                            <items>
+                                <ColumnListItem>
+                                    <cells>
+                                        <Text text="{PartnerData>Id}" />
+                                        <Text text="{PartnerData>Name}" />
+                                        <Text text="{PartnerData>Description}" />
+                                    </cells>
+                                </ColumnListItem>
+                            </items>
+                        </Table>
+					</form:content>
+				</form:SimpleForm>
+                <Panel>
+                    <FlexBox justifyContent="End">
+                        <items>
+                            <Link press="editStepOne" text="{i18n>EditLink}" />
+                        </items>
+                    </FlexBox>   
+                </Panel>
+				<form:SimpleForm
+						title="2. {i18n>TemplateStepTitle}"
+						editable="false" 
+                        layout="ResponsiveGridLayout" >
+					<form:content>
+						<Table 
+                            noDataText="{i18n>TemplatesNoData}" 
+                            items="{PartnerData>/Templates}" >
+                            <headerToolbar>
+                                <OverflowToolbar>
+                                    <Title text="{i18n>TemplatesTableTitle}" level="H2" />
+                                </OverflowToolbar>
+                            </headerToolbar>
+                            <columns>
+                                <Column>
+                                    <Text text="{i18n>TemplateNameColumnName}" />
+                                </Column>
+                                <Column>
+                                    <Text text="{i18n>CountryColumnName}" />
+                                </Column>
+                                <Column>
+                                    <Text text="{i18n>IndustryPackageColumnName}" />
+                                </Column>
+                                <Column>
+                                    <Text text="{i18n>ServiceUnitColumnName}" />
+                                </Column>
+                                <Column>
+                                    <Text text="{i18n>CreationMethodColumnName}" />
+                                </Column>
+                                <Column>
+                                    <Text text="{i18n>BackupColumnName}" />
+                                </Column>
+                            </columns>
+                            <items>
+                                <ColumnListItem>
+                                    <cells>
+                                    <Text text="{PartnerData>Name}" />
+                                    <Text text="{PartnerData>Country_Name}" />
+                                    <Text text="{PartnerData>IndPackageName}" />
+                                    <Text text="{PartnerData>HostingUnit_Name}" />
+                                    <Text text="{PartnerData>CreationMethod}" />
+                                    <Text 
+                                        text="{PartnerData>BackupPackage}" 
+                                        maxLines="1" />
+                                    </cells>
+                                </ColumnListItem>
+                            </items>
+                        </Table>
+					</form:content>
+				</form:SimpleForm>
+                <Panel>
+                    <FlexBox justifyContent="End">
+                        <items>
+                            <Link press="editStepTwo" text="{i18n>EditLink}" />
+                        </items>
+                    </FlexBox>   
+                </Panel>
+                <form:SimpleForm
+						title="3. {i18n>UserPrefixTitle}"
+						editable="false" 
+                        layout="ResponsiveGridLayout" >
+					<form:content>
+                        <Label text="{i18n>UserPrefixTextLable}"/>
+						<Text text="{PartnerData>/Cloud_Setting/0/Prefix}"/>
+                        <Label text="{i18n>UserSeparatorTextLable}"/>
+						<Text text="{PartnerData>/Cloud_Setting/0/Separator}"/>
+                    </form:content>
+				</form:SimpleForm>
+                <Panel>
+                    <FlexBox justifyContent="End">
+                        <items>
+                            <Link press="editStepThree" text="{i18n>EditLink}" />
+                        </items>
+                    </FlexBox>   
+                </Panel>
+                <form:SimpleForm
+						title="4. {i18n>EmailStepTitle}"
+						editable="false" 
+                        layout="ResponsiveGridLayout" >
+					<form:content>
+                        <Label text="{i18n>EmailTypeTextLable}"/>
+						<Text text="{PartnerData>/Cloud_Setting/0/EmailServerTypeName}"/>
+						<Label text="{i18n>EmailCCCSendToTextLable}" visible="{partnerView>/emailCccVisible}" />
+						<Text text="{PartnerData>/Cloud_Setting/0/EmailSendTo}" visible="{partnerView>/emailCccVisible}"/>
+						<Label text="{i18n>GmailUsernameTextLable}" visible="{partnerView>/gmailVisible}"/>
+						<Text text="{PartnerData>/Cloud_Setting/0/EmailUsername}" visible="{partnerView>/gmailVisible}"/>
+						<Label text="{i18n>GmailPasswordTextLable}" visible="{partnerView>/gmailVisible}"/>
+						<Text text="**********" visible="{partnerView>/gmailVisible}"/>
+                        <Label text="{i18n>GmailSendToTextLable}" visible="{partnerView>/gmailVisible}"/>
+						<Text text="{PartnerData>/Cloud_Setting/0/EmailSendTo}" visible="{partnerView>/gmailVisible}"/>
+                    </form:content>
+				</form:SimpleForm>
+                <Panel>
+                    <FlexBox justifyContent="End">
+                        <items>
+                            <Link press="editStepFour" text="{i18n>EditLink}" />
+                        </items>
+                    </FlexBox>   
+                </Panel>
+            </content>
+		</Page>
+</core:FragmentDefinition>

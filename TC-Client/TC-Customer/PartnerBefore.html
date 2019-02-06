@@ -1,0 +1,73 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<title>Partner Before</title>
+
+<link href='http://fonts.googleapis.com/css?family=Bitter' rel='stylesheet' type='text/css'>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+<link rel="stylesheet" type="text/css" href="/TC-Customer/css/style.css">
+<script>
+	$(document).ready(function(){
+			$.ajax({
+                url: "http://" + window.location.hostname + ":3000/Partner/getPartnerData/",
+                type: 'GET',
+				dataType: 'json'
+			}).then(function(result){
+					let select = document.getElementById("packageList");
+					let el = document.createElement("option");
+					el.textContent = "";
+					el.value = "0";
+					select.appendChild(el);
+					for (let i = 0; i < result.Packages.length; i++) {
+						let opt = result.Packages[i];
+						el = document.createElement("option");
+						el.textContent = opt.Name + " - " + opt.Description;
+						el.value = opt.Id;
+						select.appendChild(el);
+					}
+				}, function(error) {
+					alert("Can't find packages!");
+                });
+	});
+</script>
+</head>
+
+<body>
+
+<div class="form-style-10">
+<h1>On-Boarding Sample
+	<span style="color:orange">This page and the two other pages following it, is an example for on-boarding your customers to your cloud environment. It helps you to simulate your Tenant Configuration Wizard definitions.</span>
+	<span style="color:orange">In real environment, this page will be filled by your customers – make sure to replace this page with your real on-boarding starting page.</span>
+	<span style="color:orange">In order to make this example work properly, make sure to select a package (in this page) and a country (in the next page) as appear in one of your templates.</span>
+</h1>
+<form action="/TC-Customer/index.html">
+    <div class="section"><span>1</span>Company Details</div>
+    <div class="inner-wrap">
+        <label>Company Name <input type="text" name="cn" /></label>
+		<label>Customer Reference Number <input type="text" name="crn" /></label>
+    </div>
+
+    <div class="section"><span>2</span>Contact Person</div>
+    <div class="inner-wrap">
+		<label>First Name <input type="text" name="fn" /></label>
+		<label>Last Name <input type="text" name="ln" /></label>
+		<label>Email Address <input type="email" name="e" /></label>
+		<label>Phone <input type="text" name="ph" /></label>
+    </div>
+
+	<div class="section"><span>3</span>Industry Packages</div>
+    <div class="inner-wrap">
+		<label>Select Package <select id="packageList" name="p"></select></label>
+		<label>Maximum Users <input type="text" name="mu" /></label>
+	</div>
+	
+    <div class="button-section">
+     <input type="submit" value="Next" />
+     </span>
+    </div>
+</form>
+</div>
+
+</body>
+</html>

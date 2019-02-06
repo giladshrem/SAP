@@ -1,0 +1,305 @@
+<mvc:View
+	controllerName="oem-partner.controller.PartnerPage"
+	xmlns="sap.m"
+	xmlns:mvc="sap.ui.core.mvc"
+	xmlns:layout="sap.ui.layout"
+	xmlns:form="sap.ui.layout.form"
+	xmlns:core="sap.ui.core">
+	<NavContainer id="partnerConfNavContainer">
+		<pages>
+			<Page 
+				id="partnerConfContentPage"
+				showHeader="false">
+				<content>
+					<Wizard 
+						id="partnerConfWizard"
+						complete="wizardCompletedHandler">
+						<WizardStep 
+							id="PackagesStep"
+							title="{i18n>PackageStepTitle}"
+							validated="true"
+							complete="handleSave">
+							<Text text="{i18n>PackageStepText}" />
+							<form:SimpleForm>
+								<form:content>
+									<Table 
+										noDataText="{i18n>PackagesNoData}"
+										items="{PartnerData>/Packages}" 
+										mode="Delete" 
+										delete="onDeleteRowPackage"
+										updateFinished="onUpdateFinishedPackage">
+										<headerToolbar>
+											<OverflowToolbar>
+												<Title text="{partnerView>/PackagesTableTitle}" level="H2" />
+												<ToolbarSpacer />
+												<Button 
+													icon="sap-icon://add" 
+													type="Transparent"
+													press="onAddRowPackage" />
+											</OverflowToolbar>
+										</headerToolbar>
+										<columns>
+											<Column
+												width="10%">
+												<Text text="{i18n>PackageIDColumnName}" />
+											</Column>
+											<Column
+												width="30%">
+												<Text text="{i18n>PackageNameColumnName}" />
+											</Column>
+											<Column>
+												<Text text="{i18n>PackageDescColumnName}" />
+											</Column>
+										</columns>
+										<items>
+											<ColumnListItem>
+												<cells>
+												<Input value="{PartnerData>Id}" enabled="false" />
+												<Input 
+													value="{PartnerData>Name}"
+													liveChange="onLiveChangePackageName"
+													valueStateText="{PartnerData>_valueStateText}"  
+													valueState="{PartnerData>_valueState}"/>
+												<Input 
+													value="{PartnerData>Description}" 
+													liveChange="onLiveChangePackageDesc"/>
+												</cells>
+											</ColumnListItem>
+										</items>
+									</Table>
+								</form:content>
+							</form:SimpleForm>
+						</WizardStep>
+						<WizardStep 
+							id="TemplateStep"
+							title="{i18n>TemplateStepTitle}"
+							validated="true"
+							complete="handleSave">
+							<Text text="{i18n>TemplateStepText}" />
+							<form:SimpleForm>
+								<form:content>
+									<Table 
+										id="idTemplateTable" 
+										noDataText="{i18n>TemplatesNoData}" 
+										items="{PartnerData>/Templates}" 
+										mode="Delete" 
+										delete="onDeleteTemplate">
+										<headerToolbar>
+											<OverflowToolbar>
+												<Title text="{i18n>TemplatesTableTitle}" level="H2" />
+												<ToolbarSpacer />
+												<Button 
+													icon="sap-icon://add" 
+													type="Transparent"
+													press="onAddTemplate" />
+											</OverflowToolbar>
+										</headerToolbar>
+										<columns>
+											<Column>
+												<Text text="{i18n>TemplateNameColumnName}" />
+											</Column>
+											<Column>
+												<Text text="{i18n>CountryColumnName}" />
+											</Column>
+											<Column>
+												<Text text="{i18n>IndustryPackageColumnName}" />
+											</Column>
+											<Column>
+												<Text text="{i18n>ServiceUnitColumnName}" />
+											</Column>
+											<Column>
+												<Text text="{i18n>CreationMethodColumnName}" />
+											</Column>
+											<Column>
+												<Text text="{i18n>BackupColumnName}" />
+											</Column>
+											<Column />
+										</columns>
+										<items>
+											<ColumnListItem>
+												<cells>
+												<Text text="{PartnerData>Name}" />
+												<Text text="{PartnerData>Country_Name}" />
+												<Text text="{PartnerData>IndPackageName}" />
+												<Text text="{PartnerData>HostingUnit_Name}" />
+												<Text text="{PartnerData>CreationMethod}" />
+												<Text 
+													text="{PartnerData>BackupPackage}" 
+													maxLines="1" />
+												<Button 
+													icon="sap-icon://edit" 
+													type="Transparent"
+													press="onEditTemplate" />
+												</cells>
+											</ColumnListItem>
+										</items>
+									</Table>
+								</form:content>
+							</form:SimpleForm>
+						</WizardStep>
+						<WizardStep 
+							id="UserPrefix"
+							title="{i18n>UserPrefixTitle}"
+							validated="true"
+							complete="handleSave"
+							activate="onActivateUserPrefix">
+							<Text text="{i18n>UserPrefixStepText}" />
+							<form:SimpleForm
+								editable="true"
+								layout="ResponsiveGridLayout"
+								labelSpanXL="2"
+								labelSpanL="2"
+								labelSpanM="2"
+								labelSpanS="2"
+								adjustLabelSpan="false"
+								emptySpanXL="7"
+								emptySpanL="7"
+								emptySpanM="7"
+								emptySpanS="7"
+								columnsXL="1"
+								columnsL="1"
+								columnsM="1"
+								singleContainerFullSize="false">
+								<form:content>
+									<CheckBox 
+                                        text="{i18n>UseUserPrefixTextLable}" 
+                                        selected="{partnerView>/userPrefixEnabled}"
+										select="onSelectUseUserPrefix" />
+									<Label 
+										text="{i18n>UserPrefixTextLable}" />
+									<Select 
+										selectedKey="{PartnerData>/Cloud_Setting/0/Prefix}"
+										change="onChangeUserPrefix"
+										enabled="{partnerView>/userPrefixEnabled}"
+										valueState="{partnerView>/userPrefixVS}" 
+										items="{
+											path: 'partnerView>/userPrefixSelect',
+											type: 'sap.ui.model.type.Integer',
+											sorter: {
+												path: 'Name'
+											}
+										}">
+										<core:Item key="{partnerView>Code}" text="{partnerView>Name}" />
+									</Select>
+									<Text text="{i18n>UserPrefixTextAfterLable}">
+										<layoutData>
+											<layout:GridData span="XL2 L2 M2 S2" />
+										</layoutData>
+									</Text>
+									<Label text="{i18n>UserSeparatorTextLable}" />
+									<Input 
+										value="{PartnerData>/Cloud_Setting/0/Separator}"
+										enabled="{partnerView>/userPrefixEnabled}"
+										maxLength="3"
+										liveChange="onLiveChangeUserSeparator"
+										valueState="{partnerView>/userSeparatorVS}" >
+									</Input>
+									<Label text="{i18n>UserSimulationTextLable}" />
+									<Input 
+										value="{partnerView>/userPrefixSimulation}"
+										enabled="false" />
+								</form:content>
+							</form:SimpleForm>
+						</WizardStep>
+						<WizardStep 
+							id="EmailStep"
+							title="{i18n>EmailStepTitle}"
+							validated="true"
+							complete="handleSave"
+							activate="onActivateEmailStep">
+							<Text text="{i18n>EmailStepText}" />
+							<form:SimpleForm
+								editable="true"
+								layout="ResponsiveGridLayout"
+								labelSpanXL="2"
+								labelSpanL="2"
+								labelSpanM="2"
+								labelSpanS="2"
+								adjustLabelSpan="false"
+								emptySpanXL="6"
+								emptySpanL="6"
+								emptySpanM="6"
+								emptySpanS="6"
+								columnsXL="1"
+								columnsL="1"
+								columnsM="1"
+								singleContainerFullSize="false">
+								<form:content>
+									<Label text="{i18n>EmailTypeTextLable}" required="true" />
+									<Select 
+										items="{
+													path: 'PartnerCombos>/EmailTypes',
+													sorter: {
+														path: 'Name'
+													}
+												}"
+										selectedKey="{PartnerData>/Cloud_Setting/0/EmailServerType}"
+										change="onChangeEmailType"
+										valueState="{partnerView>/emailTypeVS}" >
+										<core:Item key="{PartnerCombos>Code}" text="{PartnerCombos>Name}"/>
+									</Select>
+									<Label 
+										text="{i18n>EmailCCCSendToTextLable}" 
+										required="true" 
+										visible="{partnerView>/emailCccVisible}"  />
+									<Input 
+										value="{PartnerData>/Cloud_Setting/0/EmailSendTo}"
+										valueStateText="{i18n>EmailCCCSendToValueStateText}" 
+										visible="{partnerView>/emailCccVisible}"
+										liveChange="onLiveChangeEmailSendTo"
+										valueState="{partnerView>/emailSendToVS}" />
+									<Label 
+										text="{i18n>GmailUsernameTextLable}" 
+										required="true" 
+										visible="{partnerView>/gmailVisible}" />
+									<Input 
+										value="{PartnerData>/Cloud_Setting/0/EmailUsername}"
+										valueStateText="{i18n>GmailUsernameValueStateText}" 
+										visible="{partnerView>/gmailVisible}" 
+										change="onChangeGmailUser" 
+										liveChange="onLiveChangeGmailUser" 
+										valueState="{partnerView>/gmailUserVS}"/>
+									<Label 
+										text="{i18n>GmailPasswordTextLable}" 
+										required="true"
+										visible="{partnerView>/gmailVisible}" />
+									<Input 
+										value="{partnerView>/emailPassword}"
+										valueStateText="{i18n>GmailPasswordValueStateText}"	
+										visible="{partnerView>/gmailVisible}"
+										type="Password"
+										liveChange="onLiveChangeGmailPassword"
+										valueState="{partnerView>/gmailPasswordVS}" />
+									<Label 
+										text="{i18n>GmailSendToTextLable}" 
+										required="true"
+										visible="{partnerView>/gmailVisible}" />
+									<Input 
+										value="{PartnerData>/Cloud_Setting/0/EmailSendTo}"
+										valueStateText="{i18n>GmailSendToValueStateText}"	
+										visible="{partnerView>/gmailVisible}"
+										liveChange="onLiveChangeEmailSendTo"
+										valueState="{partnerView>/emailSendToVS}" />
+								</form:content>
+							</form:SimpleForm>
+						</WizardStep>
+					</Wizard>
+				</content>
+					<footer>
+						<OverflowToolbar>
+							<ToolbarSpacer/>
+							<Button 
+								text="{i18n>SaveButton}" 
+								press="onSave" 
+								visible="{partnerView>/saveButtonVisible}"
+								enabled="{partnerView>/saveButtonEnabled}"
+								type="Accept" />
+							<Button 
+								text="{i18n>CancelButton}" 
+								press="onCancel" />
+						</OverflowToolbar>
+					</footer>
+			</Page>
+		</pages>
+	</NavContainer>
+</mvc:View>

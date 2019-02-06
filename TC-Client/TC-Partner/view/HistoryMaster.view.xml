@@ -1,0 +1,105 @@
+<core:View 
+    controllerName="oem-partner.controller.HistoryMaster" 
+    height="100%"
+	xmlns="sap.m"
+	xmlns:f="sap.f"
+	xmlns:fb="sap.ui.comp.filterbar"
+	xmlns:core="sap.ui.core"
+    xmlns:mvc="sap.ui.core.mvc">
+	<f:DynamicPage id="dynamicPageId"
+	    toggleHeaderOnTitleClick="false">
+		<f:title>
+			<f:DynamicPageTitle>
+				<f:heading>
+					<Title text="{i18n>ActivityHistory_Title}"/>
+				</f:heading>
+			</f:DynamicPageTitle>
+		</f:title>
+		<f:content>
+			<Table
+				id="idTenantsTable"
+				inset="false"
+				noDataText="{i18n>TenantsNoData}"
+				items="{
+					path: 'tenantsHistoryData>/Tenants',
+					sorter: {
+						path: 'RequestDate',
+						descending: true
+					}
+				}" 
+				updateFinished="onUpdateFinishedTenants"
+				mode="SingleSelectMaster"
+				selectionChange="onTenantSelect">
+				<headerToolbar>
+					<OverflowToolbar>
+						<Title text="{historyMasterView>/TenantsTableTitle}" level="H2" />
+					</OverflowToolbar>
+				</headerToolbar>
+				<columns>
+					<Column visible="{historyMasterView>/RequestedAtVisible}">
+						<Text text="{i18n>RequestedAtColumnName}"/>
+					</Column>
+					<Column visible="{historyMasterView>/LastUpdatedAtVisible}">
+						<Text text="{i18n>LastUpdatedAtColumnName}"/>
+					</Column>
+					<Column visible="{historyMasterView>/TenantStatusVisible}">
+						<Text text="{i18n>TenantStatusColumnName}"/>
+					</Column>
+					<Column visible="{historyMasterView>/CompanyNameVisible}">
+						<Text text="{i18n>CompanyNameColumnName}"/>
+					</Column>
+					<Column visible="{historyMasterView>/CountryVisible}">
+						<Text text="{i18n>CountryColumnName}"/>
+					</Column>
+					<Column visible="{historyMasterView>/IndustryPackageVisible}">
+						<Text text="{i18n>IndustryPackageColumnName}"/>
+					</Column>
+					<Column visible="{historyMasterView>/CRNVisible}">
+						<Text text="{i18n>CRNColumnName}"/>
+					</Column>
+					<Column visible="{historyMasterView>/ServiceUnitVisible}">
+						<Text text="{i18n>ServiceUnitColumnName}"/>
+					</Column>
+				</columns>
+				<items>
+					<ColumnListItem type="Navigation" >
+						<cells>
+							<Text 
+								text="{
+								path: 'tenantsHistoryData>RequestDate',
+								type: 'sap.ui.model.type.DateTime',
+								formatOptions: {
+									source: {
+										pattern: 'yyyy-MM-dd HH:mm:ss.SSS'
+									},
+									style: 'short'
+								}
+							}" />
+							<Text 
+								text="{
+								path: 'tenantsHistoryData>UpdateDate',
+								type: 'sap.ui.model.type.DateTime',
+								formatOptions: {
+									source: {
+										pattern: 'yyyy-MM-dd HH:mm:ss.SSS'
+									},
+									style: 'short'
+								}
+							}" />
+							<ObjectStatus 
+								text="{tenantsHistoryData>StatusText}" 
+								state="{tenantsHistoryData>StatusState}" 
+								active="{tenantsHistoryData>StatusActive}"
+								press="handlePopoverPress" />
+							<Text text="{tenantsHistoryData>CompanyName}" />
+							<Text text="{tenantsHistoryData>Country_Name}" />
+							<Text text="{tenantsHistoryData>IndPackageName}" />
+							<Text text="{tenantsHistoryData>CRN}" />
+							<Text text="{tenantsHistoryData>HostingUnit_Name}" />
+						</cells>
+					</ColumnListItem>
+				</items>
+			</Table>
+		</f:content>
+	</f:DynamicPage>
+</core:View>

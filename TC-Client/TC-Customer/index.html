@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+		<meta charset="utf-8">
+		<title>OEM Solution - Customer Page</title>
+		<script 
+			id="sap-ui-bootstrap"
+			src="https://sapui5.hana.ondemand.com/1.60.2/resources/sap-ui-core.js"
+			data-sap-ui-theme="sap_belize"
+			data-sap-ui-libs="sap.m, sap.tnt"
+			data-sap-ui-compatVersion="edge"
+			data-sap-ui-resourceroots='{"oem-customer": "./"}'
+			data-sap-ui-preload="async">
+		</script>
+		<script>
+			//jQuery.sap.debug(true);
+			sap.ui.getCore().attachInit(function() {
+				new sap.m.Shell({
+					app : new sap.ui.core.ComponentContainer({
+						height : "100%",
+						name : "oem-customer",
+						settings : {
+							id : "oem-customer"
+						}
+					})
+				}).placeAt("content");
+			});
+		</script>
+		
+	</head>
+	<body class="sapUiBody" id="content">
+	</body>
+</html>

@@ -1,0 +1,378 @@
+<mvc:View
+	controllerName="oem-partner.controller.Template"
+	xmlns:mvc="sap.ui.core.mvc"
+	xmlns:m="sap.m"
+	xmlns:form="sap.ui.layout.form"
+	xmlns:core="sap.ui.core"
+	xmlns="sap.uxap">
+	<m:Page showHeader="true"
+		showNavButton="true"
+		navButtonPress="onNavBack">
+		<m:content>
+			<ObjectPageLayout>
+				<headerTitle>
+					<ObjectPageHeader objectTitle="{i18n>NewTemplateTitle}"/>
+				</headerTitle>
+				<sections>
+					<ObjectPageSection title="{i18n>TemplateHeaderSectionTitle}" >
+						<subSections>
+							<ObjectPageSubSection>
+								<blocks>
+									<form:SimpleForm
+										editable="true"
+										layout="ResponsiveGridLayout"
+										labelSpanXL="12"
+										labelSpanL="12"
+										labelSpanM="12"
+										labelSpanS="12"
+										adjustLabelSpan="false"
+										emptySpanXL="0"
+										emptySpanL="0"
+										emptySpanM="0"
+										emptySpanS="0"
+										columnsXL="3"
+										columnsL="3"
+										columnsM="3"
+										singleContainerFullSize="false" >
+										<form:content>
+											<core:Title />
+											<m:Label text="{i18n>TemplateNameTextLable}" required="true" />
+											<m:Input 
+												value="{PartnerData>Name}"
+												valueState="{templateView>/templateNameVS}"
+												liveChange="onLiveChangeTemplateName" />
+											<m:Label text="{i18n>CountryTextLable}" required="true" />
+											<m:Select
+												items="{
+													path: 'countries>/Countries',
+													sorter: {
+														path: 'Name'
+													}
+												}"
+												selectedKey="{PartnerData>Country_Code}"
+												valueState="{templateView>/countryVS}" 
+												change="onChangeCountry" >
+												<core:Item key="{countries>Code}" text="{countries>Name}" />
+											</m:Select>
+											<m:Label text="{i18n>IndustryPackageTextLable}" />
+											<m:Select
+												items="{
+													path: 'PartnerData>/PackagesList',
+													sorter: {
+														path: 'Name'
+													}
+												}"
+												selectedKey="{
+													path: 'PartnerData>IndPackageId', 
+													type: 'sap.ui.model.type.Integer'
+												}" 
+												change="onChangeIndustryPackage">
+												<core:Item key="{PartnerData>Id}" text="{PartnerData>Name}" />
+											</m:Select>
+											<core:Title />
+											<m:Label text="{i18n>ServiceUnitTextLable}" required="true" />
+											<m:Input
+												showValueHelp="true"
+												valueHelpOnly="true"
+												valueHelpRequest="openServiceUnitsDialog"
+												value="{PartnerData>HostingUnit_Name}" 
+												valueState="{templateView>/serviceUnitVS}" />
+											<m:Label text="{i18n>ExtensionsTextLable}" />
+											<m:MultiInput
+												enabled="{templateView>/extensions}"
+												enableMultiLineMode="true" 
+												valueHelpOnly="true"
+												valueHelpRequest="openExtensionsDialog"
+												tokenUpdate="onTokenUpdateExtensions"
+												tokens="{
+													path: 'PartnerData>Templates_Extenstions',
+													sorter: {
+														path: 'Name'
+													}
+												}" >
+												<m:tokens>
+													<m:Token key="{PartnerData>ExtensionDeployment_Id}" text="{PartnerData>Name}" />
+												</m:tokens>
+											</m:MultiInput>
+											<m:Label text="{i18n>AuthenticationTextLable}" required="true" />
+											<m:Select
+												enabled="{templateView>/authentication}"
+												selectedKey="{PartnerData>Authentication}"
+												change="onChangeAuthentication" >
+												<m:items>
+													<core:Item key="sbo" text="{i18n>AuthenticationSBO}" />
+													<core:Item key="win" text="{i18n>AuthenticationWindows}" />
+												</m:items>
+											</m:Select>
+											<core:Title />
+											<m:Label text="{i18n>CreationMethodTextLable}" required="true" />
+											<m:Select 
+												enabled="{templateView>/creationMethod}"
+												items="{path: 'creationMethod>/CreationMethod'}"
+												selectedKey="{PartnerData>CreationMethod}" 
+												change="onChangeCreationMethod" >
+												<core:Item key="{creationMethod>Code}" text="{creationMethod>Name}" />
+											</m:Select>
+											<m:Label text="{i18n>BackupTextLable}" />
+											<m:Select 
+												enabled="{templateView>/backup}"
+												items="{
+													path: 'serviceUnitCombos>/backupPackage',
+													sorter: {
+														path: 'Name'
+													}
+												}"
+												selectedKey="{PartnerData>BackupPackage}" 
+												change="onChangeBackupPackage" 
+												valueState="{templateView>/backupPackageVS}" >
+												<core:Item key="{serviceUnitCombos>Code}" text="{serviceUnitCombos>Name}" />
+											</m:Select>
+										</form:content>
+									</form:SimpleForm>
+								</blocks>
+							</ObjectPageSubSection>
+						</subSections>
+					</ObjectPageSection>
+					<ObjectPageSection title="{i18n>LocalParametersSectionTitle}" >
+						<subSections>
+							<ObjectPageSubSection>
+								<blocks>
+									<form:SimpleForm
+										editable="true"
+										layout="ResponsiveGridLayout"
+										labelSpanXL="12"
+										labelSpanL="12"
+										labelSpanM="12"
+										labelSpanS="12"
+										adjustLabelSpan="false"
+										emptySpanXL="0"
+										emptySpanL="0"
+										emptySpanM="0"
+										emptySpanS="0"
+										columnsXL="3"
+										columnsL="3"
+										columnsM="3"
+										singleContainerFullSize="false" >
+										<form:content>
+											<core:Title />
+											<m:Label text="{i18n>LocalSettingsTextLable}" />
+											<m:Select 
+												enabled="{templateView>/localSettings}"
+												items="{
+													path: 'serviceUnitCombos>/localSettings',
+													sorter: {
+														path: 'Name'
+													}
+												}"
+												selectedKey="{PartnerData>LocalSettings}" 
+												change="onChangeLocalSettings" 
+												valueState="{templateView>/localSettingsVS}" >
+												<core:Item key="{serviceUnitCombos>Code}" text="{serviceUnitCombos>Name}" />
+											</m:Select>
+											<m:Label text="{i18n>ChartOfAccountTextLable}" />
+											<m:Select 
+												enabled="{templateView>/chartOfAccount}"
+												items="{
+													path: 'localSettingCombos>/chartOfAccounts',
+													sorter: {
+														path: 'Name'
+													}
+												}"
+												selectedKey="{PartnerData>ChartOfAccount}" 
+												change="onChangeChartOfAccount" 
+												valueState="{templateView>/chartOfAccountVS}" >
+												<core:Item key="{localSettingCombos>Code}" text="{localSettingCombos>Name}" />
+											</m:Select>
+											<m:Label text="{i18n>SystemLanguesgeTextLable}" />
+											<m:Select 
+												enabled="{templateView>/systemLanguesge}"
+												items="{
+													path: 'serviceUnitCombos>/systemLanguesge',
+													sorter: {
+														path: 'Name'
+													}
+												}"
+												selectedKey="{
+													path: 'PartnerData>SystemLanguage', 
+													type: 'sap.ui.model.type.Integer'
+												}" 
+												change="onChangeSystemLanguesge" 
+												valueState="{templateView>/systemLanguesgeVS}" >
+												<core:Item key="{serviceUnitCombos>Code}" text="{serviceUnitCombos>Name}" />
+											</m:Select>
+										</form:content>
+									</form:SimpleForm>
+								</blocks>
+							</ObjectPageSubSection>
+						</subSections>
+					</ObjectPageSection>
+					<ObjectPageSection title="{i18n>LicensesSectionTitle}" >
+						<subSections>
+							<ObjectPageSubSection>
+								<blocks>
+									<form:SimpleForm
+										editable="true"
+										layout="ResponsiveGridLayout"
+										labelSpanXL="12"
+										labelSpanL="12"
+										labelSpanM="12"
+										labelSpanS="12"
+										adjustLabelSpan="false"
+										emptySpanXL="0"
+										emptySpanL="0"
+										emptySpanM="0"
+										emptySpanS="0"
+										columnsXL="3"
+										columnsL="3"
+										columnsM="3"
+										singleContainerFullSize="false" >
+										<form:content>
+											<core:Title />
+											<m:Label 
+												text="{i18n>LicenseFileTextLable}" 
+												required="true" />
+											<m:Input 
+												enabled="{templateView>/licenseFile}"
+												showValueHelp="true"
+												valueHelpOnly="true"
+												valueHelpRequest="openLicenseFileDialog"
+												value="{PartnerData>License_FileName}" 
+												valueState="{templateView>/licenseFileVS}" />
+											<m:Label text="{i18n>LicensePolicyTextLable}" />
+											<m:CheckBox 
+												enabled="{templateView>/licensePolicy}"
+												text="{i18n>LicensePolicyTextCheckBox}"
+												selected="{PartnerData>IsSameLicense}"
+												select="onSelectLicensePolicy"
+												/>
+											<m:Label text="{i18n>LicenseTypeTextLable}" />
+											<m:MultiInput 
+												enabled="{templateView>/licenseType}"
+												valueHelpOnly="true"
+												enableMultiLineMode="true" 
+												valueHelpRequest="openLicenseTypeDialog"
+												tokenUpdate="onTokenUpdateLicenseType"
+												tokens="{
+													path: 'PartnerData>Templates_Licenses',
+													sorter: {
+														path: 'LicenseType'
+													}
+												}" 
+												valueState="{templateView>/licenseTypeVS}" >
+												<m:tokens>
+													<m:Token key="{PartnerData>LicenseType}" text="{PartnerData>LicenseType}" />
+												</m:tokens>
+											</m:MultiInput>
+										</form:content>
+									</form:SimpleForm>
+								</blocks>
+							</ObjectPageSubSection>
+						</subSections>
+					</ObjectPageSection>
+					<ObjectPageSection title="{i18n>OperatorsSectionTitle}" >
+						<subSections>
+							<ObjectPageSubSection>
+								<blocks>
+									<form:SimpleForm
+										editable="true"
+										layout="ResponsiveGridLayout"
+										labelSpanXL="12"
+										labelSpanL="12"
+										labelSpanM="12"
+										labelSpanS="12"
+										adjustLabelSpan="false"
+										emptySpanXL="0"
+										emptySpanL="0"
+										emptySpanM="0"
+										emptySpanS="0"
+										columnsXL="1"
+										columnsL="1"
+										columnsM="1"
+										singleContainerFullSize="false" >
+										<form:content>
+											<m:Table 
+												noDataText="{i18n>OperatorsNoData}"
+												items="{PartnerData>Templates_Operators}"
+												mode="Delete" 
+												delete="onDeleteOperator"
+												updateFinished="onUpdateFinishedOperator">
+												<m:headerToolbar>
+													<m:OverflowToolbar>
+														<m:Title text="{i18n>OperatorsTableTitle}" level="H2" />
+														<m:ToolbarSpacer />
+														<m:Button 
+															icon="sap-icon://add" 
+															type="Transparent"
+															enabled="{templateView>/addOperator}"
+															press="onAddOperator" />
+													</m:OverflowToolbar>
+												</m:headerToolbar>
+												<m:columns>
+													<m:Column>
+														<m:Text text="{i18n>SystemUserColumnName}" />
+													</m:Column>
+													<m:Column>
+														<m:Text text="{i18n>UserCodeColumnName}" />
+													</m:Column>
+													<m:Column>
+														<m:Text text="{i18n>SuperUserColumnName}" />
+													</m:Column>
+													<m:Column>
+														<m:Text text="{i18n>PowerUserColumnName}" />
+													</m:Column>
+													<m:Column>
+														<m:Text text="{i18n>LicenseColumnName}" />
+													</m:Column>
+												</m:columns>
+												<m:items>
+													<m:ColumnListItem>
+														<m:cells>
+															<m:Text text="{PartnerData>SystemUser}" />
+															<m:Text text="{PartnerData>UserCode}" />
+															<m:CheckBox 
+																selected="{PartnerData>SuperUser}"
+																select="onSelectSuperUser" />
+															<m:CheckBox 
+																enabled="{PartnerData>PowerUser_enabled}"
+																selected="{PartnerData>PowerUser}" 
+																select="onSelectPowerUser" />
+															<m:MultiInput 
+																enableMultiLineMode="true"
+																valueHelpOnly="true"
+																valueHelpRequest="openOperatorsLicensesDialog"
+																tokenUpdate="onTokenUpdateOperatorsLicenseType"
+																tokens="{
+																	path: 'PartnerData>Operators_licenses',
+																	sorter: {
+																		path: 'LicenseType'
+																	}
+																}" >
+																<m:tokens>
+																	<m:Token key="{PartnerData>LicenseType}" text="{PartnerData>LicenseType}" />
+																</m:tokens>
+															</m:MultiInput>
+														</m:cells>
+													</m:ColumnListItem>
+												</m:items>	
+											</m:Table>
+										</form:content>
+									</form:SimpleForm>
+								</blocks>
+							</ObjectPageSubSection>
+						</subSections>
+					</ObjectPageSection>
+				</sections>
+			</ObjectPageLayout>
+		</m:content>
+		<m:footer>
+			<m:OverflowToolbar>
+				<m:ToolbarSpacer/>
+				<m:Button 
+					text="{i18n>SaveButton}" 
+					enabled="{templateView>/edited}"
+					press="onSave"/>
+				<m:Button text="{i18n>CancelButton}" press="onCancel"/>
+			</m:OverflowToolbar>
+		</m:footer>
+    </m:Page>
+</mvc:View>

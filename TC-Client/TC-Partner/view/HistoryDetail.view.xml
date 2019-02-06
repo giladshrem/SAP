@@ -1,0 +1,269 @@
+<m:View 
+    displayBlock="true" 
+    controllerName="oem-partner.controller.HistoryDetail" 
+    height="100%"
+	xmlns="sap.uxap"
+	xmlns:m="sap.m"
+	xmlns:f="sap.f"
+    xmlns:core="sap.ui.core"
+    xmlns:layout="sap.ui.layout"
+	xmlns:form="sap.ui.layout.form">
+
+	<ObjectPageLayout id="idObjectPageLayout"
+        showTitleInHeaderContent="true"
+        alwaysShowContentHeader="false"
+        preserveHeaderStateOnScroll="false"
+        headerContentPinnable="true"
+        isChildPage="true"
+        upperCaseAnchorBar="false">
+        <headerTitle>
+            <ObjectPageDynamicHeaderTitle>
+                <expandedHeading>
+                    <m:Title 
+                        text="{i18n>CompanyNameTextLable}: {customerDataModel>/CustomerDtl/0/CompanyName}" 
+                        wrapping="true" 
+                        class="sapUiSmallMarginEnd"/>
+                </expandedHeading>
+                <navigationActions>
+                    <m:OverflowToolbarButton 
+                        type="Transparent" 
+                        icon="sap-icon://decline" 
+                        press="handleClosePress"  
+                        tooltip="{i18n>ActivityHistory_Title}" />
+                </navigationActions>
+            </ObjectPageDynamicHeaderTitle>
+		</headerTitle>
+        <headerContent >
+                <layout:VerticalLayout width="33%">
+                    <m:ObjectStatus 
+                        title="{i18n>CustomerNameTextLable}" 
+                        text="{customerDataModel>/CustomerDtl/0/CustomerName}" 
+                        class="sapUiTinyMarginBottom" />
+                    <m:ObjectStatus 
+                        title="{i18n>TenantNameTextLable}" 
+                        text="{customerDataModel>/CustomerDtl/0/TenantName}"
+                        class="sapUiTinyMarginBottom" />
+                    <layout:HorizontalLayout class="sapUiTinyMarginBottom">
+                        <m:Label text="{i18n>ContactTextLable}: " />
+                        <m:Link 
+                            text="{customerDataModel>/CustomerDtl/0/FullName}"
+                            press="handlePopoverContactPress" />
+                    </layout:HorizontalLayout>
+                    <m:ObjectStatus 
+                        title="{i18n>CustomerReferenceNumberTextLable}" 
+                        text="{customerDataModel>/CustomerDtl/0/CRN}"
+                        class="sapUiTinyMarginBottom"/>
+                </layout:VerticalLayout>
+                <layout:VerticalLayout width="33%">
+                    <m:ObjectStatus 
+                        title="{i18n>TemplateNameTextLable}" 
+                        text="{customerDataModel>/CustomerDtl/0/TemplateName}"
+                        class="sapUiTinyMarginBottom" />
+                    <m:ObjectStatus 
+                        title="{i18n>CountryTextLable}" 
+                        text="{customerDataModel>/CustomerDtl/0/Country_Name}"
+                        class="sapUiTinyMarginBottom" />
+                    <m:ObjectStatus 
+                        title="{i18n>IndustryPackageTextLable}" 
+                        text="{customerDataModel>/CustomerDtl/0/IndPackageName}"
+                        class="sapUiTinyMarginBottom" />
+                    <m:ObjectStatus 
+                        title="{i18n>ServiceUnitTextLable}" 
+                        text="{customerDataModel>/CustomerDtl/0/HostingUnit_Name}"
+                        class="sapUiTinyMarginBottom" />
+                </layout:VerticalLayout>
+                <layout:VerticalLayout>
+                    <m:ObjectStatus 
+                        title="{i18n>FiscalPeriodTextLable}" 
+                        text="{customerDataModel>/CustomerDtl/0/FinancialPeriodName}"
+                        class="sapUiTinyMarginBottom" />
+                    <m:ObjectStatus 
+                        title="{i18n>StartFiscalYearTextLable}" 
+                        text="{
+								path: 'customerDataModel>/CustomerDtl/0/PeriodStarts',
+								type: 'sap.ui.model.type.Date',
+								formatOptions: {
+									source: {
+										pattern: 'yyyy-MM-ddTHH:mm:ss.AAAZ'
+									},
+									style: 'short'
+								}
+							}"
+                        class="sapUiTinyMarginBottom" />
+                    <m:ObjectStatus 
+                        id="idEmailStatus"
+                        title="{i18n>EmailStatusTextLable}" 
+                        text="{historyDetailView>/EmailStatusText}"
+                        class="sapUiTinyMarginBottom" 
+                        state="{historyDetailView>/EmailStatusState}"
+                        press="handlePopoverPress" 
+                        active="{historyDetailView>/EmailStatusActive}" />
+                    <m:ObjectStatus 
+                        id="idTenantStatus"
+                        title="{i18n>TenantStatusTextLable}" 
+                        text="{historyDetailView>/StatusText}" 
+                        class="sapUiTinyMarginBottom" 
+                        state="{historyDetailView>/StatusState}"
+                        press="handlePopoverPress" 
+                        active="{historyDetailView>/StatusActive}"/>
+                </layout:VerticalLayout>
+        </headerContent>
+
+        <sections>
+			<ObjectPageSection title="{i18n>SolutionParametersTitle}">
+				<subSections>
+					<ObjectPageSubSection>
+						<blocks>
+							<form:SimpleForm
+								maxContainerCols="2"
+								editable="false"
+								layout="ResponsiveGridLayout"
+								labelSpanL="12"
+								labelSpanM="12"
+								emptySpanL="0"
+								emptySpanM="0"
+								columnsL="2"
+								columnsM="2">
+								<form:content>
+                                    <core:Title text="" />
+									<m:Label text="{i18n>LicenseFileTextLable}"/>
+									<m:Text text="{customerDataModel>/CustomerDtl/0/License_FileName}"/>
+                                    <m:Label text="{i18n>LicensePolicyTextLable}"/>
+									<m:CheckBox 
+                                        text="{i18n>LicensePolicyTextCheckBox}" 
+                                        selected="{historyDetailView>/IsSameLicense}" 
+                                        enabled="false" />
+									<m:Label text="{i18n>CreationMethodTextLable}"/>
+									<m:Text text="{historyDetailView>/CreationMethodText}"/>
+									<m:Label text="{i18n>PackageBackupNameTextLable}"/>
+									<m:Text text="{customerDataModel>/CustomerDtl/0/BackupPackageName}"/>
+                                    <core:Title text="" />
+									<m:Label text="{i18n>LocalSettingsTextLable}"/>
+									<m:Text text="{customerDataModel>/CustomerDtl/0/LocalSettingsName}"/>
+                                    <m:Label text="{i18n>ChartOfAccountTextLable}"/>
+									<m:Text text="{customerDataModel>/CustomerDtl/0/ChartOfAccountName}"/>
+                                    <m:Label text="{i18n>SystemLanguesgeTextLable}"/>
+									<m:Text text="{customerDataModel>/CustomerDtl/0/SystemLanguageName}"/>
+                                    <m:Label text="{i18n>AuthenticationTextLable}"/>
+									<m:Text text="{historyDetailView>/AuthenticationText}"/>
+								</form:content>
+							</form:SimpleForm>
+						</blocks>
+					</ObjectPageSubSection>
+				</subSections>
+			</ObjectPageSection>
+            <ObjectPageSection title="{i18n>UsersTitle}">
+				<subSections>
+					<ObjectPageSubSection>
+						<blocks>
+							<m:Table 
+                                id="idUsersTable"
+                                updateFinished="onUpdateFinishedTable"
+								items="{
+                                    path : 'customerDataModel>/CustomerUsersDtl'
+                                }">
+                                <m:headerToolbar>
+                                    <m:OverflowToolbar>
+                                        <m:Title text="{historyDetailView>/UsersTableTitle}" level="H2" />
+                                    </m:OverflowToolbar>
+                                </m:headerToolbar>
+								<m:columns>
+									<m:Column width="20%">
+                                        <m:Text text="{i18n>SystemUserColumnName}"/>
+                                    </m:Column>
+                                    <m:Column width="16%">
+                                        <m:Text text="{i18n>UserCodeColumnName}"/>
+                                    </m:Column>
+                                    <m:Column width="20%">
+                                        <m:Text text="{i18n>EmailUserColumnName}"/>
+                                    </m:Column>
+                                    <m:Column width="10%">
+                                        <m:Text text="{i18n>StatusColumnName}"/>
+                                    </m:Column>
+                                    <m:Column width="7%">
+                                        <m:Text text="{i18n>SuperUserColumnName}"/>
+                                    </m:Column>
+                                    <m:Column width="7%">
+                                        <m:Text text="{i18n>PowerUserColumnName}"/>
+                                    </m:Column>
+                                    <m:Column>
+                                        <m:Text text="{i18n>LicenseColumnName}"/>
+                                    </m:Column>
+								</m:columns>
+								<m:items>
+									<m:ColumnListItem>
+										<m:cells>
+											<m:Text text="{customerDataModel>SystemUser}" />
+                                            <m:Text text="{customerDataModel>UserCode}" />
+                                            <m:Text text="{customerDataModel>UserPrincipalName}" />
+                                            <m:ObjectStatus 
+                                                text="{customerDataModel>StatusText}" 
+                                                state="{customerDataModel>StatusState}"
+                                                active="{customerDataModel>StatusActive}"
+								                press="handlePopoverPress" />
+                                            <m:CheckBox selected="{customerDataModel>SuperUser}" enabled="false"/>
+                                            <m:CheckBox selected="{customerDataModel>PowerUser}" enabled="false"/>
+                                            <m:Text text="{customerDataModel>LicenseType}" />
+										</m:cells>
+									</m:ColumnListItem>
+								</m:items>
+							</m:Table>
+						</blocks>
+					</ObjectPageSubSection>
+				</subSections>
+			</ObjectPageSection>
+            <ObjectPageSection title="{i18n>ExtensionsTitle}">
+				<subSections>
+					<ObjectPageSubSection>
+						<blocks>
+							<m:Table 
+                                id="idExtensionsTable"
+                                updateFinished="onUpdateFinishedTable"
+								items="{
+                                    path : 'customerDataModel>/CustomerExtDtl'
+                                }">
+                                <m:headerToolbar>
+                                    <m:OverflowToolbar>
+                                        <m:Title text="{historyDetailView>/ExtensionsTableTitle}" level="H2" />
+                                    </m:OverflowToolbar>
+                                </m:headerToolbar>
+								<m:columns>
+									<m:Column>
+                                        <m:Text text="{i18n>ExD_ColumnName}"/>
+                                    </m:Column>
+                                    <m:Column>
+                                        <m:Text text="{i18n>ExD_ColumnVersion}"/>
+                                    </m:Column>
+                                    <m:Column>
+                                        <m:Text text="{i18n>ExD_ColumnProvider}"/>
+                                    </m:Column>
+                                    <m:Column>
+                                        <m:Text text="{i18n>ExD_ColumnType}"/>
+                                    </m:Column>
+                                    <m:Column>
+                                        <m:Text text="{i18n>StatusColumnName}"/>
+                                    </m:Column>
+								</m:columns>
+								<m:items>
+									<m:ColumnListItem>
+										<m:cells>
+											<m:Text text="{customerDataModel>Extension_Name}" />
+                                            <m:Text text="{customerDataModel>Extension_Version}" />
+                                            <m:Text text="{customerDataModel>Extension_Vendor}" />
+                                            <m:Text text="{customerDataModel>Extension_Type}" />
+                                            <m:ObjectStatus 
+                                                text="{customerDataModel>Extension_StatusText}" 
+                                                state="{customerDataModel>Extension_StatusState}"
+                                                active="{customerDataModel>Extension_StatusActive}"
+								                press="handlePopoverPress" />
+										</m:cells>
+									</m:ColumnListItem>
+								</m:items>
+							</m:Table>
+						</blocks>
+					</ObjectPageSubSection>
+				</subSections>
+			</ObjectPageSection>
+        </sections>
+	</ObjectPageLayout>
+</m:View>

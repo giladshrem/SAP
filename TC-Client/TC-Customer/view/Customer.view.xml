@@ -1,0 +1,235 @@
+<mvc:View
+	controllerName="oem-customer.controller.Customer"
+	xmlns="sap.m"
+	xmlns:mvc="sap.ui.core.mvc"
+	xmlns:core="sap.ui.core"
+	xmlns:form="sap.ui.layout.form"
+	xmlns:layout="sap.ui.layout"
+	xmlns:tnt="sap.tnt">
+	<Page class="sapUiSizeCompact" showHeader="false">
+		<tnt:ToolHeader>
+			<Image
+				src="./images/SAP_BOne_R_neg1.png"
+				width="6%"/>
+			<ToolbarSpacer/>
+			<Title text="{i18n>pageTitle}"/>
+			<ToolbarSpacer/>
+			<Text text="Version {customerView>/version}"/>
+		</tnt:ToolHeader>
+		<content>
+			<MessageStrip
+				type="Warning"
+				showIcon="true"
+				text="Note: This page is part of the Tenant Configurator solution that will be filled by your customers. 
+					The 'Confirm' button will create a tenant based on the configuration in this page and the respective pre-configured template that you defined in the Tenant Configuration Wizard. 
+					In real environment, you'll need to embed this page as part of your on-boarding process – make sure to delete this note before doing so 
+					in file view/Customer.view.xml, MessageStrip tag."
+				class="sapUiMediumMarginTop"/>
+			<VBox>
+				<form:SimpleForm 
+					id="CompanyInformation"
+					editable="true"
+					layout="ResponsiveGridLayout"
+					title="{i18n>companyInformationTitle}"
+					labelSpanXL="12"
+					labelSpanL="12"
+					labelSpanM="4"
+					labelSpanS="12"
+					adjustLabelSpan="false"
+					emptySpanXL="0"
+					emptySpanL="0"
+					emptySpanM="0"
+					emptySpanS="0"
+					columnsXL="3"
+					columnsL="3"
+					columnsM="2"
+					singleContainerFullSize="false" >
+					<form:content>
+						<core:Title text="{i18n>companyDetailsTitle}" />
+						<Label text="{i18n>companyName}" required="true" />
+						<Input 
+							id="idCompanyName"
+							value="{/companyName}" 
+							valueState="{customerView>/valueState/companyName}"
+							valueStateText="{i18n>companyNameValueStateText}"
+							liveChange="validateCompanyName" />
+						<Label text="{i18n>customerReferenceNumber}" />
+						<Input editable="false" value="{/customerReferenceNumber}" />
+						<Label text="{i18n>country}" required="true" />
+						<Select 
+							id="country" 	
+							items="{
+								path: 'countries>/Countries',
+								sorter: {
+									path: 'Name'
+								}
+							}"
+							selectedKey="{/country}" 
+							valueState="{customerView>/valueState/country}"
+							valueStateText="{i18n>countryValueStateText}"
+							change="validateCountry" >
+							<core:Item key="{countries>Code}" text="{countries>Name}" />
+						</Select>
+						<Label text="{i18n>package}" />
+						<Input editable="false" value="{/IndPackageName}" />
+						<core:Title text="{i18n>contactTitle}" />
+						<Label text="{i18n>contactFirstName}" required="true" />
+						<Input 
+							value="{/contactFirstName}" 
+							valueState="{customerView>/valueState/contactFirstName}"
+							valueStateText="{i18n>contactFirstNameValueStateText}"
+							liveChange="validateContactFirstName" />
+						<Label text="{i18n>contactLastName}" required="true" />
+						<Input 
+							value="{/contactLastName}" 
+							valueState="{customerView>/valueState/contactLastName}"
+							valueStateText="{i18n>contactLastNameValueStateText}"
+							liveChange="validateContactLastName" />
+						<Label text="{i18n>contactEmail}" required="true" />
+						<Input 
+							value="{/contactEmail}" 
+							valueState="{customerView>/valueState/contactEmail}"
+							valueStateText="{i18n>contactEmailValueStateText}"
+							liveChange="validateContactEmail" />
+						<Label text="{i18n>contactPhone}" required="true" />
+						<Input 
+							value="{/contactPhone}" 
+							valueState="{customerView>/valueState/contactPhone}"
+							valueStateText="{i18n>contactPhoneValueStateText}"
+							liveChange="validateContactPhone" />
+					</form:content>
+				</form:SimpleForm>
+				<form:SimpleForm id="AccountingInformation"
+					editable="true"
+					layout="ResponsiveGridLayout"
+					title="{i18n>accountingInformationTitle}"
+					labelSpanXL="12"
+					labelSpanL="12"
+					labelSpanM="12"
+					labelSpanS="12"
+					adjustLabelSpan="false"
+					emptySpanXL="0"
+					emptySpanL="0"
+					emptySpanM="0"
+					emptySpanS="0"
+					columnsXL="1"
+					columnsL="1"
+					columnsM="1"
+					singleContainerFullSize="false" >
+					<Text text="{i18n>financialPeriodsHelp} {i18n>fiscalYearHelp}" />
+					<Label text="{i18n>financialPeriods}" required="true" />
+					<Select 
+						id="financialPeriods" 
+						selectedKey="{/financialPeriods}" 
+						width="32%"	>
+						<items>
+							<core:Item text="{i18n>periodYearly}" key="Y"/>
+							<core:Item text="{i18n>periodQuarterly}" key="Q"/>
+							<core:Item text="{i18n>stateMonthly}" key="M"/>
+						</items>
+					</Select>
+					<Label text="{i18n>startFiscalYear}" required="true" />
+					<DatePicker
+						id="DP1"
+						value="{/startFiscalYear}" 
+						valueFormat="yyyy-MM-dd" 
+						valueState="{customerView>/valueState/startFiscalYear}"
+						valueStateText="{i18n>startFiscalYearValueStateText}"
+						displayFormat="long"
+						change="validateStartFiscalYear"
+						class="sapUiSmallMarginBottom"
+						width="32%" />
+				</form:SimpleForm>
+				<form:SimpleForm id="UserInformation"
+					editable="true"
+					layout="ResponsiveGridLayout"
+					title="{i18n>userInformationTitle}"
+					labelSpanXL="12"
+					labelSpanL="12"
+					labelSpanM="12"
+					labelSpanS="12"
+					adjustLabelSpan="false"
+					emptySpanXL="0"
+					emptySpanL="0"
+					emptySpanM="0"
+					emptySpanS="0"
+					columnsXL="1"
+					columnsL="1"
+					columnsM="1"
+					singleContainerFullSize="false" >
+					<Text text="{i18n>userInformationHelp}" />
+					<Label 
+						text="{i18n>UPNSuffix}"
+						visible="{customerView>/isUPN}" />
+					<Input 
+						value="{/UPNSuffix}" 
+						liveChange="validateUPNSuffix"
+						placeholder="MyCompany.com"
+						valueState="{customerView>/valueState/UPNSuffix}"
+						width="32%"
+						visible="{customerView>/isUPN}" 
+						maxLength="{customerView>/userLength}"/>
+					<Table 
+						id="idUserTable" 
+						noDataText="{i18n>noDataText}" 
+						mode="Delete" 
+						delete="onDeleteRow"
+						updateFinished="onUpdateFinished">
+						<layoutData>
+							<layout:GridData span="XL12 L12 M12 S12" />
+						</layoutData>
+						<headerToolbar>
+							<OverflowToolbar id="otbSubheader">
+								<Title text="{customerView>/userTableTitle}" level="H2" />
+								<ToolbarSpacer />
+								<Button id="addButton" icon="sap-icon://add" type="Transparent"
+									press="onAddRow" />
+							</OverflowToolbar>
+						</headerToolbar>
+						<columns>
+							<Column	width="200px">
+								<Text text="{i18n>usernameColumnName}" />
+							</Column>
+							<Column
+								width="200px"
+								visible="{customerView>/isUPN}" >
+								<Text text="{i18n>EmailUserColumnName}" />
+							</Column>
+							<Column
+								width="200px"
+								visible="{customerView>/isUPN}" >
+								<Text text="{i18n>emailAddrUserColumnName}" />
+							</Column>
+							<Column 
+								hAlign="Center"
+								width="200px">
+								<Text text="{i18n>administratorUserColumnName}" />
+							</Column>
+							<Column>
+								
+							</Column>
+						</columns>
+					</Table>
+				</form:SimpleForm>
+			</VBox>
+		</content>
+		<footer>
+			<Toolbar>
+				<Button 
+					id="idMessagePopover"
+					icon="sap-icon://message-popup" 
+					text="{customerView>/messagesLength}" 
+					type="Emphasized"
+					visible="{customerView>/messagesVisible}" 
+					press="handleMessagePopoverPress"/>
+				<ToolbarSpacer/>
+				<Button 
+					text="Confirm" 
+					type="Emphasized" 
+					press="onConfirm" 
+					enabled="{customerView>/confirmButtonEnabled}" />
+				<Button text="Cancel" />
+			</Toolbar>
+		</footer>
+	</Page>
+</mvc:View>

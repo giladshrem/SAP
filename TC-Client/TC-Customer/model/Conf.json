@@ -1,0 +1,17 @@
+{
+    "server" : {
+        "URL" : { 
+            "protocol" : "http:",
+            "hostname" : "",
+            "port" : "3000",
+            "path" : "Customer"
+        },
+        "methodes" : {
+            "sendSldLogin" : "Login",
+            "validateUserName" : "CheckUser",
+            "saveUserData" : "saveCustomerData",
+            "getPartnerGeneralData" : "getPartnerGeneralData"
+        }
+    },
+    "nextPage" : "/TC-Customer/PartnerComplete.html"
+}

@@ -1,0 +1,16 @@
+{
+    "CreationMethod": [
+        {
+            "Code": "Normal",
+            "Name": "Normal"
+        },
+        {
+            "Code": "Backup",
+            "Name": "Backup"
+        },
+        {
+            "Code": "Package",
+            "Name": "Solution Package"
+        }
+    ]
+}

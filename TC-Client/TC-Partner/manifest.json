@@ -1,0 +1,188 @@
+{
+	"_version": "1.3.0",
+	"sap.app": {
+		"_version": "1.3.0",
+		"id": "oem-partner",
+		"type": "application",
+		"i18n": "i18n/i18n.properties",
+		"title": "{{appTitle}}",
+		"description": "{{appDescription}}",
+		"applicationVersion": {
+			"version": "1.2.0"
+		}
+	},
+	"sap.ui": {
+		"_version": "1.3.0",
+		"technology": "UI5",
+		"deviceTypes": {
+			"desktop": true,
+			"tablet": true,
+			"phone": true
+		},
+		"supportedThemes": [
+			"sap_hcb",
+			"sap_bluecrystal",
+			"sap_belize"
+		]
+	},
+	"sap.ui5": {
+		"_version": "1.1.0",
+		"rootView": {
+			"viewName": "oem-partner.view.App",
+			"type": "XML",
+			"async": true,
+			"id": "app"
+		},
+		"dependencies": {
+			"minUI5Version": "1.30",
+			"libs": {
+				"sap.ui.core": {},
+				"sap.m": {},
+				"sap.tnt": {},
+				"sap.ui.layout": {},
+				"sap.uxap": {}
+			}
+		},
+		"models": {
+			"i18n": {
+				"type": "sap.ui.model.resource.ResourceModel",
+				"settings": {
+					"bundleName": "oem-partner.i18n.i18n"
+				}
+			},
+			"countries": {
+				"type": "sap.ui.model.json.JSONModel",
+				"uri": "model/Countries.json"
+			},
+			"creationMethod": {
+				"type": "sap.ui.model.json.JSONModel",
+				"uri": "model/CreationMethod.json"
+			},
+			"PartnerData": {
+				"type": "sap.ui.model.json.JSONModel"
+			},
+			"emptyPartnerData": {
+				"type": "sap.ui.model.json.JSONModel",
+				"uri": "model/emptyPartnerData.json"
+			},
+			"savePartnerData": {
+				"type": "sap.ui.model.json.JSONModel"
+			},
+			"PartnerCombos": {
+				"type": "sap.ui.model.json.JSONModel"
+			},
+			"serviceUnitCombos": {
+				"type": "sap.ui.model.json.JSONModel"
+			},
+			"partnerView": {
+				"type": "sap.ui.model.json.JSONModel"
+			},
+			"templateView": {
+				"type": "sap.ui.model.json.JSONModel"
+			},
+			"localSettingCombos": {
+				"type": "sap.ui.model.json.JSONModel"
+			},
+			"tenantsHistoryData": {
+				"type": "sap.ui.model.json.JSONModel"
+			},
+			"customerDataModel": {
+				"type": "sap.ui.model.json.JSONModel"
+			},
+			"historyDetailView": {
+				"type": "sap.ui.model.json.JSONModel"
+			},
+			"popoverData": {
+				"type": "sap.ui.model.json.JSONModel"
+			},
+			"popoverContactData": {
+				"type": "sap.ui.model.json.JSONModel"
+			},
+			"publicCloudCombo": {
+				"type": "sap.ui.model.json.JSONModel"
+			},
+			"publicCloudData": {
+				"type": "sap.ui.model.json.JSONModel"
+			},
+			"publicCloudView": {
+				"type": "sap.ui.model.json.JSONModel"
+			},
+			"setupView": {
+				"type": "sap.ui.model.json.JSONModel"
+			},
+			"setupData": {
+				"type": "sap.ui.model.json.JSONModel"
+			},
+			"sldData": {
+				"type": "sap.ui.model.json.JSONModel"
+			},
+			"serviceLayerData": {
+				"type": "sap.ui.model.json.JSONModel"
+			}
+		},
+		"routing": {
+			"config": {
+				"routerClass": "sap.m.routing.Router",
+				"controlId": "mainContents",
+				"viewType": "XML",
+				"controlAggregation": "pages",
+				"viewPath": "oem-partner.view",
+				"async": true
+			},
+			"routes": [
+				{
+					"pattern": "",
+					"name": "partner",
+					"target": "partner"
+				},
+				{
+					"pattern" : "History",
+					"name" : "history",
+					"target" : "history"
+				},
+				{
+					"pattern" : "Setup",
+					"name" : "setup",
+					"target" : "setup"
+				},
+				{
+					"pattern" : "PublicCloud",
+					"name" : "publicCloud",
+					"target" : "publicCloud"
+				},
+				{
+					"pattern" : "Template/{index}",
+					"name" : "template",
+					"target" : "template"
+				}
+			],
+			"targets": {
+				"partner": {
+					"viewId": "partner",
+					"viewName": "PartnerPage",
+					"viewLevel": 1
+				},
+				"history": {
+					"viewId": "historyFCL",
+					"viewName": "HistoryFCL",
+					"viewLevel": 1
+				},
+				"setup": {
+					"viewId": "setup",
+					"viewName": "SetupPage",
+					"viewLevel": 1
+				},
+				"publicCloud": {
+					"viewId": "publicCloud",
+					"viewName": "PublicCloudPage",
+					"viewLevel": 1
+				},
+				"template": {
+					"viewName": "Template",
+					"viewId": "template",
+					"viewLevel": 2
+				}
+			}
+		}
+	}
+}
