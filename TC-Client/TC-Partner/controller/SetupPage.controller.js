@@ -425,6 +425,8 @@ sap.ui.define([
             let msg = this._bundle.getText("SetupDBSaveSuccess");
             MessageToast.show(msg);
             this.setDbButtons(true, false);
+            this.getServiceLayerData();
+            this.getPartnerCombos();
         },
 
         //#endregion Save DB Setup Data
