@@ -26,25 +26,10 @@ sap.ui.define([
 			if (this._templateView) {
 				this._templateView.setProperty("/edited", false);
 				this._templateView.setProperty("/isBind", false);
+				this._templateView.setProperty("/TemplateServiceUnits", "");
 			}
 
-			this.getServiceUnitCombos();
-
-			if (this._oServiceUnitsDialog) {
-				this._oServiceUnitsDialog = undefined;
-			}
-			if (this._oExtensionsDialog) {
-				this._oExtensionsDialog = undefined;
-			}
-			if (this._oLicenseFileDialog) {
-				this._oLicenseFileDialog = undefined;
-			}
-			if (this._oAssignLicensesDialog) {
-				this._oAssignLicensesDialog = undefined;
-			}
-			if (this._oOperatorDialog) {
-				this._oOperatorDialog = undefined;
-			}
+			this.setServiceUnitData();
 		},
 		
 		bindTemplateData : function () {
@@ -65,13 +50,18 @@ sap.ui.define([
 			this._countriesDataModel.updateBindings(true);
 			this._PartnerDataModel = this.getModel("PartnerData");
 			this._PartnerCombosModel = this.getModel("PartnerCombos");
-			this._serviceUnitCombosModel = this.getModel("serviceUnitCombos");
 			this._localSettingCombosModel = this.getModel("localSettingCombos");
 			this._creationMethodModel = this.getModel("creationMethod");
 			this._countriesDataModel = this.getModel("countries");
 
 			// Model used to manipulate control states
-			var oViewModel = new JSONModel({
+			let oViewModel = this.getTemplateEmptyModel();
+			this.setModel(oViewModel, "templateView");
+			this._templateView = this.getModel("templateView");
+		},
+
+		getTemplateEmptyModel : function () {
+			let oViewModel = new JSONModel({
 				edited : false,
 				isBind : false,
 				extensions : false,
@@ -84,60 +74,82 @@ sap.ui.define([
 				licenseFile : false,
 				licensePolicy : false,
 				licenseType : false,
-				addOperator : false
+				addOperator : false,
+				TemplateServiceUnits : "",
+				DialogServiceUnits : {
+					ServerType : "SQL",
+					UseLoadBalancingEnabled : false,
+					LoadBalancingEnabled : "N",
+					AlgorithmEnabled : false,
+					Algorithm : "L",
+					AlgorithmText : "",
+					ServiceUnitsTable : [],
+					MoveUpEnabled : false,
+					MoveDownEnabled : false,
+					SubmitEnabled : false,
+					ServiceUnitsSelected: []
+				},
+				DialogExtentions : {
+					ExtentionsTable : []
+				},
+				DialogBackups : {
+					BackupsTable : []
+				},
+				DialogPackages : {
+					PackagesTable : []
+				}
 			});
-			
-			this.setModel(oViewModel, "templateView");
-			this._templateView = this.getModel("templateView");
-			this._PartnerDataModel.refresh();
+			return oViewModel;
 		},
 
 		//#endregion Init
 
-		//#region Service Unit Combos Model
+		//#region Service Unit Combos
 
-		getServiceUnitCombos : function () {
+		setServiceUnitData : function () {
 			if (!this._PartnerCombosModel) {
 				this.initLocals();
-			} else
-			{
+			} else	{
 				this.serviceUnitEffect(false);
-				this._templateView.refresh();
 			}
 
 			this.buildPackgesComboModel();
 			this.clearValidations();
-			let serviceUnitValue = this._PartnerDataModel.getProperty(this._TemplatePath + "/HostingUnit_Id");
-			if (!serviceUnitValue)
+			let aTemplates_ServiceUnits = this._PartnerDataModel.getProperty(this._TemplatePath + "/Templates_ServiceUnits");
+			if ((!aTemplates_ServiceUnits) || (aTemplates_ServiceUnits.length === 0))
 			{
-				let emptyData = {};
-				this._serviceUnitCombosModel.setData(emptyData);
 				this.bindTemplateData();
 				return;
 			}
-			let methodName = this.getConfModel().getProperty("/server/methodes/getServiceUnitCombos");
-			methodName = methodName.replace("{0}", serviceUnitValue);
-            let reqURL = this.getServerURL() + methodName;
-            $.ajax({
-                url: reqURL,
-                type: 'GET',
-                dataType: 'json',
-                success: function(result){
-					this.setServiceUnitCombos(result);
-                }.bind(this),
-                error: function(XMLHttpRequest, textStatus, errorThrown) {
-					jQuery.sap.log.error(textStatus);
-                 }               
-              });
+			let aServiceunitsParams = this.getServiceUnitParams();
+			if (aServiceunitsParams) {
+				this.setServiceUnitParams(aServiceunitsParams);
+			}
+		},
+
+		getServiceUnitParams : function () {
+			let aServiceUnitParams;
+			let oServiceunitsParams = this._PartnerCombosModel.getProperty("/allparams");
+			let aTemplates_ServiceUnits = this._PartnerDataModel.getProperty(this._TemplatePath + "/Templates_ServiceUnits");
+			if ((aTemplates_ServiceUnits) || (aTemplates_ServiceUnits.length > 0))
+			{
+				let SU_ID = aTemplates_ServiceUnits[0].HostingUnit_Id;
+				let indexServiceUnitParams = oServiceunitsParams.findIndex(x => x.serviceunitID === SU_ID);
+				if (indexServiceUnitParams >= 0) {
+					aServiceUnitParams = oServiceunitsParams[indexServiceUnitParams];
+				}
+			}
+			return aServiceUnitParams;
 		},
 
 		buildPackgesComboModel : function () {
-			this._PartnerDataModel.oData.PackagesList = JSON.parse(JSON.stringify(this._PartnerDataModel.oData.Packages));
-			this._PartnerDataModel.oData.PackagesList.push({  
+			let aPackages = JSON.parse(JSON.stringify(this._PartnerDataModel.getProperty("/Packages")));
+			aPackages.push({  
 				"Id":0,
 				"Name":"-No Package-",
 				"Description":"-No Package-"
 			 });
+			 this._PartnerDataModel.setProperty("/PackagesList", aPackages);
 		},
 
 		clearValidations : function () {
@@ -152,51 +164,53 @@ sap.ui.define([
 			this._templateView.setProperty("/licenseTypeVS", "None");
 		},
 		
-		setServiceUnitCombos : function (data) {
-			var a;
-			data.localSettings = [{"Code": "", "Name": ""}];
+		setServiceUnitParams : function (data) {
+			let a;
+			let aLocalSettings = [{"Code": "", "Name": ""}];
 			if (data.localizations.d)
 			{
-				for(var i = 0; i < data.localizations.d.results.length; i++) {
+				for(let i = 0; i < data.localizations.d.results.length; i++) {
 					a = data.localizations.d.results[i].split(",");
-					data.localSettings.push({"Code": a[0], "Name": a[1]});
+					aLocalSettings.push({"Code": a[0], "Name": a[1]});
 				}
 			}
-			data.systemLanguesge = [{"Code": -1, "Name": ""}];
-			for(var i = 0; i < data.languages.d.results.length; i++) {
+			this._PartnerCombosModel.setProperty("/localSettings", aLocalSettings);
+
+			let aSystemLanguesge = [{"Code": -1, "Name": ""}];
+			for(let i = 0; i < data.languages.d.results.length; i++) {
 				a = data.languages.d.results[i].split(",");
-				data.systemLanguesge.push({"Code": a[1], "Name": a[0]});
+				aSystemLanguesge.push({"Code": a[1], "Name": a[0]});
 			}
+			this._PartnerCombosModel.setProperty("/systemLanguesge", aSystemLanguesge);
 
-			this._serviceUnitCombosModel.setData(data);	
-			this._serviceUnitCombosModel.refresh();
 			this.setViewAfterServiceUnit();
-
 			this.onChangeCreationMethod();
-			this.onChangeBackupPackage();
+			this.validateBackupPackage();
+			this.setBackupPackageName();
+			this.tryGetSolutionPackageData();
 			this.setAssignLicensesModel();
 			this.onSelectLicensePolicy();
 			this.getLocalSettingCombos();
+			this.toggleServiceLayer();
 		},
 
 		setViewAfterServiceUnit : function() {
+			this.setServiceUnitsInput();
 			this.serviceUnitEffect(true);
 			
-			var creationMethod = {
-				"CreationMethod": [
-					{
-						"Code": "Normal",
-						"Name": "Normal"
-					}
-				]
+			let creationMethod = {
+				"CreationMethod": [{
+					"Code": "Normal",
+					"Name": "Normal"
+				}]
 			};
-
-			if (!this._serviceUnitCombosModel.oData.servertype.d.ServerType) {
+			let sServerType = this._PartnerDataModel.getProperty(this._TemplatePath + "/ServerType"); 
+			if (!sServerType) {
 				return;
 			}
 
-			if (this._serviceUnitCombosModel.oData.servertype.d.ServerType.includes("MSSQL")) {
-				this._templateView.oData.authentication = true;
+			if (sServerType.includes("SQL")) {
+				this._templateView.setProperty("/authentication", true);
 				creationMethod.CreationMethod.push({
 					"Code": "Backup",
 					"Name": "Backup"
@@ -206,7 +220,7 @@ sap.ui.define([
 					"Name": "Solution Package"
 				});
 			} else {
-				var version = this._PartnerCombosModel.oData.sldVersion.d.results[0].Value;
+				let version = this._PartnerCombosModel.getProperty("/sldVersion/d/results/0/Value");
 				if (!this.isLowerSldVersion(version, "1.10.SP00.PL11")) {
 					creationMethod.CreationMethod.push({
 						"Code": "Backup",
@@ -215,14 +229,12 @@ sap.ui.define([
 				}
 			}
 
-			this._templateView.refresh();
-
-			this._creationMethodModel.setData(creationMethod);	
+			this._creationMethodModel.setData(creationMethod);
 		},
 
 		isLowerSldVersion : function(testVersion, baseVersion) {
-			var aBaseVersion = baseVersion.split(".");
-			var aTestVersion = testVersion.split(".");
+			let aBaseVersion = baseVersion.split(".");
+			let aTestVersion = testVersion.split(".");
 			if (aTestVersion[0] < aBaseVersion[0]) {
 				return true;
 			} else if (aTestVersion[0] > aBaseVersion[0]) {
@@ -262,7 +274,7 @@ sap.ui.define([
 			}
 		},
 
-		//#endregion Service Unit Combos Model
+		//#endregion Service Unit Combos
 
 		//#region Local Settings Combos Model
 
@@ -271,19 +283,17 @@ sap.ui.define([
 				this.initLocals();
 
 			let oTemplate = this._PartnerDataModel.getProperty(this._TemplatePath);
-			let serviceUnitValue = oTemplate.HostingUnit_Id;
-			if (!serviceUnitValue) {
-				let emptyData = {};
-				this._serviceUnitCombosModel.setData(emptyData);
+			let aTemplates_ServiceUnits = oTemplate.Templates_ServiceUnits;
+			if ((!aTemplates_ServiceUnits) || (aTemplates_ServiceUnits.length === 0)) {
 				this.bindTemplateData();
 				return;
 			}
-
+			let serviceUnitValue = aTemplates_ServiceUnits[0].HostingUnit_Id;
 			if (oTemplate.CreationMethod === "Package") {
 				return;
 			}
 
-			var localSettingsValue = this._PartnerDataModel.oData.Templates[this._TemplateIndex].LocalSettings;
+			let localSettingsValue = this._PartnerDataModel.oData.Templates[this._TemplateIndex].LocalSettings;
 			if (localSettingsValue) {
 				this._templateView.setProperty("/chartOfAccount", true);
 			}
@@ -299,6 +309,9 @@ sap.ui.define([
 			$.ajax({
 				url: reqURL,
 				type: 'GET',
+				xhrFields: {
+                    withCredentials: true
+                },
 				dataType: 'json',
 				success: function(result){
 					this.handleGetLocalSettingCombosSuccess(result);
@@ -309,7 +322,15 @@ sap.ui.define([
 				});
 		},
 
-		handleGetLocalSettingCombosSuccess : function (result) {
+		handleGetLocalSettingCombosSuccess : function (data) {
+            if (this.isSamlRequest(data)) {
+                this.handleSsoRequest(data);
+            } else {
+                this.setLocalSettingCombos(data);
+            }
+		},
+		
+		setLocalSettingCombos : function (result) {
 			if (this.isObject(result)) {
 				this.setChartOfAccountsCombos(result);
 				this.bindTemplateData();
@@ -318,7 +339,7 @@ sap.ui.define([
 
 		setChartOfAccountsCombos : function (data, isPreDefined) {
 			data.chartOfAccounts = [{"Code": "", "Name": ""}];
-			for(var i = 0; i < data.d.results.length; i++) {
+			for(let i = 0; i < data.d.results.length; i++) {
 				data.chartOfAccounts.push({"Code": data.d.results[i], "Name": data.d.results[i]});
 			}
 			let coaName = this._bundle.getText("COA_UserDefined");
@@ -338,44 +359,360 @@ sap.ui.define([
 		//#endregion Local Settings Combos Model
 
 		//#region Service Unit Dialog
+		
+		setServiceUnitsTablesModel : function () {
+			let ServerType = this._templateView.getProperty("/DialogServiceUnits/ServerType");
+			let LoadBalancingEnabled = this._templateView.getProperty("/DialogServiceUnits/LoadBalancingEnabled");
+			if (LoadBalancingEnabled === "Y") {
+				this._templateView.setProperty("/DialogServiceUnits/AlgorithmEnabled", true);
+			} else {
+				this._templateView.setProperty("/DialogServiceUnits/AlgorithmEnabled", false);
+			}
+			let oServiceunits = this._PartnerCombosModel.getProperty("/serviceunits/d/results");
+			let oServiceunitsParams = this._PartnerCombosModel.getProperty("/allparams");
+			let oTemplates_ServiceUnits = this._PartnerDataModel.getProperty(this._TemplatePath + "/Templates_ServiceUnits");
+			let oServiceUnitsTable = [];
+			let oServiceUnitsSelected = [];
+			let indexServiceUnitParams, indexTemplates_ServiceUnits, SU_ID, SU_ServerType, SU_NumberOfTenants, bSelected, iOrder, iMaxTenants;
+			for(let i = 0; i < oServiceunits.length; i++) {
+				SU_ID = oServiceunits[i].ID;
+				indexServiceUnitParams = oServiceunitsParams.findIndex(x => x.serviceunitID === SU_ID);
+				if (indexServiceUnitParams >= 0) {
+					SU_ServerType = oServiceunitsParams[indexServiceUnitParams].servertype.d.ServerType;
+					if (!SU_ServerType.includes(ServerType)) {
+						continue;
+					}
+					SU_NumberOfTenants = oServiceunitsParams[indexServiceUnitParams].numberOfTenants;
+				} else {
+					continue;
+				}
+				indexTemplates_ServiceUnits = -1;
+				if (oTemplates_ServiceUnits) {
+					indexTemplates_ServiceUnits = oTemplates_ServiceUnits.findIndex(x => x.HostingUnit_Id === SU_ID);
+				}
+				if (indexTemplates_ServiceUnits >= 0) {
+					bSelected = true;
+					iOrder = oTemplates_ServiceUnits[indexTemplates_ServiceUnits].Order;
+					iMaxTenants = oTemplates_ServiceUnits[indexTemplates_ServiceUnits].MaxTenants;
+				} else {
+					bSelected = false;
+					iOrder = "9999";
+					iMaxTenants = 9999;
+				}
+				oServiceUnitsTable.push({
+					"Selected" : bSelected,
+					"ID" : oServiceunits[i].ID,
+					"Name" : oServiceunits[i].Name,
+					"Purpose" : oServiceunits[i].Purpose,
+					"Version" : oServiceunits[i].Version,
+					"Status" : oServiceunits[i].Status,
+					"NumTenants" : SU_NumberOfTenants
+				});
+				if (bSelected) {
+					oServiceUnitsSelected.push({
+						"ID" : oServiceunits[i].ID,
+						"Name" : oServiceunits[i].Name,
+						"Version" : oServiceunits[i].Version,
+						"NumTenants" : SU_NumberOfTenants,
+						"Order": iOrder,
+						"MaxTenants" : iMaxTenants
+					});
+				}
+			}
+			
+			if ((oServiceUnitsTable.length === 1) && (oServiceUnitsSelected.length != 1)) {
+				this._templateView.setProperty("/DialogServiceUnits/UseLoadBalancingEnabled", false);
+				oServiceUnitsTable[0].Selected = true;
+				oServiceUnitsSelected = [];
+				oServiceUnitsSelected.push({
+					"ID" : oServiceUnitsTable[0].ID,
+					"Name" : oServiceUnitsTable[0].Name,
+					"Version" : oServiceUnitsTable[0].Version,
+					"NumTenants" : oServiceUnitsTable[0].NumTenants,
+					"Order": 1,
+					"MaxTenants" : 100
+				});
+			} else if (oServiceUnitsTable.length > 1) {
+				this._templateView.setProperty("/DialogServiceUnits/UseLoadBalancingEnabled", true);
+			}
+			this._templateView.setProperty("/DialogServiceUnits/ServiceUnitsTable", oServiceUnitsTable);
+			this._templateView.setProperty("/DialogServiceUnits/ServiceUnitsSelected", oServiceUnitsSelected);
+			this.setSubmitButton();
+		},
 
-		handleSearch: function(oEvent, column) {
-			var sValue = oEvent.getParameter("value");
-			var oFilter = new Filter(column, sap.ui.model.FilterOperator.Contains, sValue);
-			var oBinding = oEvent.getSource().getBinding("items");
-			if (oBinding) {
-				oBinding.filter([oFilter]);
+		setServiceUnitsDialogModel : function () {
+			let ServerType = this._PartnerDataModel.getProperty(this._TemplatePath + "/ServerType");
+			if (ServerType != "HANA") {
+				ServerType = "SQL";
+			}
+			this._templateView.setProperty("/DialogServiceUnits/ServerType", ServerType);
+			let LoadBalancing = this._PartnerDataModel.getProperty(this._TemplatePath + "/LoadBalancing");
+			if (LoadBalancing) {
+				this._templateView.setProperty("/DialogServiceUnits/LoadBalancingEnabled", "Y");
+			} else {
+				this._templateView.setProperty("/DialogServiceUnits/LoadBalancingEnabled", "N");
+			}
+			this.setServiceUnitsTablesModel();
+			this.onChangeUseLoadBalancing();
+			let Algorithm = this._PartnerDataModel.getProperty(this._TemplatePath + "/Algorithm");
+			if (!Algorithm) {
+				Algorithm = "L";
+			}
+			this._templateView.setProperty("/DialogServiceUnits/Algorithm", Algorithm);
+			this.setAlgoruthmText();
+			this._templateView.setProperty("/DialogServiceUnits/SubmitEnabled", false);
+		},
+
+		setAlgoruthmText : function () {
+			let Algorithm = this._templateView.getProperty("/DialogServiceUnits/Algorithm");
+			switch(Algorithm) {
+				case "L":
+					this._templateView.setProperty("/DialogServiceUnits/AlgorithmText", this._bundle.getText("SUD_LeastTenantsAlgorithmText"));
+				break;
+				case "R":
+					this._templateView.setProperty("/DialogServiceUnits/AlgorithmText", this._bundle.getText("SUD_RoundRobinAlgorithmText"));
+				break;
+				default:
+					this._templateView.setProperty("/DialogServiceUnits/AlgorithmText", "");
+				break;
 			}
 		},
-		
+
 		openServiceUnitsDialog : function(oEvent) {
-			if (!this._oServiceUnitsDialog) {
-				this._oServiceUnitsDialog = sap.ui.xmlfragment("oem-partner.view.DialogServiceUnit", this);
+			if (this._oServiceUnitsDialog) {
+				this._oServiceUnitsDialog.destroy();	
 			}
+			this._oServiceUnitsDialog = sap.ui.xmlfragment("idFragmentDialogServiceUnit", "oem-partner.view.DialogServiceUnit", this);
+			this.setServiceUnitsDialogModel();
 			this.getView().addDependent(this._oServiceUnitsDialog);
 			this._oServiceUnitsDialog.open();
 		},
 
-		handleServiceUnitsSearch : function(oEvent) {
-			this.handleSearch(oEvent, "Name");
+		setSubmitButton : function() {
+			let LoadBalancingEnabled = this._templateView.getProperty("/DialogServiceUnits/LoadBalancingEnabled");
+			let aSelectedServiceUnits = sap.ui.core.Fragment.byId("idFragmentDialogServiceUnit", "idServiceUnitsTable").getSelectedItems();
+			let SubmitEnabled = ((!(LoadBalancingEnabled === "Y") && (aSelectedServiceUnits.length === 1)) ||
+				((LoadBalancingEnabled === "Y") && (aSelectedServiceUnits.length > 1)));
+			this._templateView.setProperty("/DialogServiceUnits/SubmitEnabled", SubmitEnabled);
 		},
 
-		handleServiceUnitsDialogConfirm : function (oEvent) {
-			var aContexts = oEvent.getParameter("selectedContexts");
-			var sPath = aContexts[0].sPath;
-			var _index = sPath.split("/").slice(-1).pop();
+		onChangeServerType : function() {
+			this._templateView.setProperty("/DialogServiceUnits/LoadBalancingEnabled", "N");
+			let oTable = sap.ui.core.Fragment.byId("idFragmentDialogServiceUnit", "idServiceUnitsTable");
+			oTable.setMode("SingleSelectLeft");
+			this._PartnerDataModel.setProperty(this._TemplatePath + "/Templates_ServiceUnits", []);
+			this.setServiceUnitsTablesModel();
+			this.setOrderButtons();
+		},
 
-			var SU_ID = this._PartnerCombosModel.getProperty("/serviceunits/d/results/" + _index + "/ID");
-			this._PartnerDataModel.setProperty(this._TemplatePath + "/HostingUnit_Id", SU_ID);
-			var SU_Name = this._PartnerCombosModel.getProperty("/serviceunits/d/results/" + _index + "/Name");
-			this._PartnerDataModel.setProperty(this._TemplatePath + "/HostingUnit_Name", SU_Name);
+		onChangeUseLoadBalancing : function(oEvent) {
+			let LoadBalancingEnabled = this._templateView.getProperty("/DialogServiceUnits/LoadBalancingEnabled");
+			let oTable = sap.ui.core.Fragment.byId("idFragmentDialogServiceUnit", "idServiceUnitsTable");
+			if (LoadBalancingEnabled === "Y") {
+				this._templateView.setProperty("/DialogServiceUnits/AlgorithmEnabled", true);
+				oTable.setMode("MultiSelect");
+			} else {
+				this._templateView.setProperty("/DialogServiceUnits/AlgorithmEnabled", false);
+				oTable.setMode("SingleSelectLeft");
+			}
+			if (oEvent) {
+				this.setSubmitButton();
+			}
+			this.setOrderButtons();
+		},
+
+		onChangeAlgorithm : function() {
+			this.setAlgoruthmText();
+			this.setOrderButtons();
+			this.setSubmitButton();
+		},
+
+		onServiceUnitsTableSelectionChange : function(oEvent) {
+			let isSelectAll = oEvent.getParameter("selectAll");
+			if (isSelectAll) {
+				this.addAllServiceUnitsAsSelected();
+				this.setOrderButtons();
+				this.setSubmitButton();
+				return;
+			}
+			let isSelected = oEvent.getParameter("selected");
+			if (!isSelected) {
+				let aListItems = oEvent.getParameter("listItems");
+				let oServiceUnitsTable = this._templateView.getProperty("/DialogServiceUnits/ServiceUnitsTable");
+				if (aListItems.length === oServiceUnitsTable.length) {//User pres on unselect all
+					this._templateView.setProperty("/DialogServiceUnits/ServiceUnitsSelected", []);
+					this.setOrderButtons();
+					this.setSubmitButton();
+					return;
+				}
+			}
+			let oServiceUnitsSelected;
+			let LoadBalancingEnabled = this._templateView.getProperty("/DialogServiceUnits/LoadBalancingEnabled");
+			if (LoadBalancingEnabled === "Y") {
+				oServiceUnitsSelected = this._templateView.getProperty("/DialogServiceUnits/ServiceUnitsSelected");
+			} else {
+				oServiceUnitsSelected = [];
+			}
+			
+			let oBindingContext = oEvent.getParameter("listItem").getBindingContext("templateView");
+			let _SU_ID = oBindingContext.getProperty("ID");
+			if (isSelected) {
+				let _SU_Name = oBindingContext.getProperty("Name");
+				let _SU_Version = oBindingContext.getProperty("Version");
+				let _SU_NumTenants = oBindingContext.getProperty("NumTenants");
+				oServiceUnitsSelected.push({
+					"ID" : _SU_ID,
+					"Name" : _SU_Name,
+					"Version" : _SU_Version,
+					"NumTenants" : _SU_NumTenants,
+					"Order": oServiceUnitsSelected.length + 1,
+					"MaxTenants" : 100
+				});
+			} else {
+				let index = oServiceUnitsSelected.findIndex(x => x.ID === _SU_ID);
+				if (index >= 0) {
+					oServiceUnitsSelected.splice(index, 1);
+					for (let i = index; i < oServiceUnitsSelected.length; i++) {
+						oServiceUnitsSelected[i].Order = oServiceUnitsSelected[i].Order - 1;
+					}
+				}
+			}
+
+			this._templateView.setProperty("/DialogServiceUnits/ServiceUnitsSelected", oServiceUnitsSelected);
+			this.setOrderButtons();
+			this.setSubmitButton();
+		},
+
+		addAllServiceUnitsAsSelected : function () {
+			let oServiceUnitsTable = this._templateView.getProperty("/DialogServiceUnits/ServiceUnitsTable");
+			let oServiceUnitsSelected = this._templateView.getProperty("/DialogServiceUnits/ServiceUnitsSelected");
+			let _SU_ID, _SU_Name, _SU_Version, _SU_NumTenants, index;
+			if (oServiceUnitsTable.length) {
+				for (let i = 0; i < oServiceUnitsTable.length; i++) {
+					_SU_ID = oServiceUnitsTable[i].ID;
+					index = oServiceUnitsSelected.findIndex(x => x.ID === _SU_ID);
+					if (index === -1) {
+						_SU_Name = oServiceUnitsTable[i].Name;
+						_SU_Version = oServiceUnitsTable[i].Version;
+						_SU_NumTenants = oServiceUnitsTable[i].NumTenants;
+						oServiceUnitsSelected.push({
+							"ID" : _SU_ID,
+							"Name" : _SU_Name,
+							"Version" : _SU_Version,
+							"NumTenants" : _SU_NumTenants,
+							"Order": oServiceUnitsSelected.length + 1,
+							"MaxTenants" : 100
+						});
+					}
+				}
+				this._templateView.setProperty("/DialogServiceUnits/ServiceUnitsSelected", oServiceUnitsSelected);
+			}
+		},
+
+		setOrderButtons : function() {
+			let bMoveUpEnabled = false;
+			let bMoveDownEnabled = false;
+			let Algorithm = this._templateView.getProperty("/DialogServiceUnits/Algorithm");
+			if (Algorithm == "R") {
+				let oTable = sap.ui.core.Fragment.byId("idFragmentDialogServiceUnit", "idServiceUnitsSelected");
+				let oSelectedItem = oTable.getSelectedItem();
+				if (oSelectedItem) {
+					let _Order = oTable.getSelectedItem().getBindingContext("templateView").getProperty("Order");
+					let oServiceUnitsSelected = this._templateView.getProperty("/DialogServiceUnits/ServiceUnitsSelected");
+					if (_Order > 1) {
+						bMoveUpEnabled = true;
+					}
+					if (_Order < oServiceUnitsSelected.length) {
+						bMoveDownEnabled = true;
+					}
+				}
+			}
+			this._templateView.setProperty("/DialogServiceUnits/MoveUpEnabled", bMoveUpEnabled);
+			this._templateView.setProperty("/DialogServiceUnits/MoveDownEnabled", bMoveDownEnabled);
+		},
+
+		onServiceUnitsSelectedSelectionChange : function(oEvent) {
+			this.setOrderButtons();
+		},
+
+		onMoveUp : function(oEvent) {
+			let oTable = sap.ui.core.Fragment.byId("idFragmentDialogServiceUnit", "idServiceUnitsSelected");
+			let oSelectedItem = oTable.getSelectedItem();
+			if (oSelectedItem) {
+				let _Order = oTable.getSelectedItem().getBindingContext("templateView").getProperty("Order");
+				if (_Order > 1) {
+					let oServiceUnitsSelected = this._templateView.getProperty("/DialogServiceUnits/ServiceUnitsSelected");
+					oServiceUnitsSelected[_Order-1].Order = _Order - 1;
+					oServiceUnitsSelected[_Order-2].Order = _Order;
+					let temp = oServiceUnitsSelected[_Order-1];
+					oServiceUnitsSelected[_Order-1] = oServiceUnitsSelected[_Order-2];
+					oServiceUnitsSelected[_Order-2] = temp;
+					this._templateView.setProperty("/DialogServiceUnits/ServiceUnitsSelected", oServiceUnitsSelected);
+					oTable.setSelectedItem(oTable.getItems()[_Order-2]);
+					this.setOrderButtons();
+					this.setSubmitButton();
+				}
+			}
+		},
+
+		onMoveDown : function() {
+			let oTable = sap.ui.core.Fragment.byId("idFragmentDialogServiceUnit", "idServiceUnitsSelected");
+			let oSelectedItem = oTable.getSelectedItem();
+			if (oSelectedItem) {
+				let _Order = oTable.getSelectedItem().getBindingContext("templateView").getProperty("Order");
+				let oServiceUnitsSelected = this._templateView.getProperty("/DialogServiceUnits/ServiceUnitsSelected");
+				if (_Order < oServiceUnitsSelected.length) {
+					oServiceUnitsSelected[_Order-1].Order = _Order + 1;
+					oServiceUnitsSelected[_Order].Order = _Order;
+					let temp = oServiceUnitsSelected[_Order-1];
+					oServiceUnitsSelected[_Order-1] = oServiceUnitsSelected[_Order];
+					oServiceUnitsSelected[_Order] = temp;
+					this._templateView.setProperty("/DialogServiceUnits/ServiceUnitsSelected", oServiceUnitsSelected);
+					oTable.setSelectedItem(oTable.getItems()[_Order]);
+					this.setOrderButtons();
+					this.setSubmitButton();
+				}
+			}
+		},
+
+		onLiveChangeMaxTenants : function () {
+			this.setSubmitButton();
+		},
+
+		handleServiceUnitsDialogClose : function () {
+			this._oServiceUnitsDialog.close();
+		},
+
+		handleServiceUnitsDialogSubmit : function () {
+			let aServiceUnitsSelected = this._templateView.getProperty("/DialogServiceUnits/ServiceUnitsSelected");
+			let aTemplates_ServiceUnits = [];
+			let _TemplateId = this._PartnerDataModel.getProperty(this._TemplatePath + "/id");
+			if (aServiceUnitsSelected.length) {
+				for (let i = 0; i < aServiceUnitsSelected.length; i++) {
+					aTemplates_ServiceUnits.push({
+						"TemplateId": _TemplateId,
+						"HostingUnit_Id": aServiceUnitsSelected[i].ID,
+						"HostingUnit_Name": aServiceUnitsSelected[i].Name,
+						"Order": aServiceUnitsSelected[i].Order,
+						"MaxTenants": aServiceUnitsSelected[i].MaxTenants
+					});
+				}
+			}
+			this._PartnerDataModel.setProperty(this._TemplatePath + "/Templates_ServiceUnits", aTemplates_ServiceUnits);
+			let ServerType = this._templateView.getProperty("/DialogServiceUnits/ServerType");
+			this._PartnerDataModel.setProperty(this._TemplatePath + "/ServerType", ServerType);
+			let LoadBalancingEnabled = this._templateView.getProperty("/DialogServiceUnits/LoadBalancingEnabled");
+			this._PartnerDataModel.setProperty(this._TemplatePath + "/LoadBalancing", (LoadBalancingEnabled === "Y") ? true : false);
+			let Algorithm = this._templateView.getProperty("/DialogServiceUnits/Algorithm");
+			this._PartnerDataModel.setProperty(this._TemplatePath + "/Algorithm", Algorithm);
+			this._templateView.setProperty("/edited", true);
+			this._oServiceUnitsDialog.close();
+			this.setServiceUnitsInput();
 			this.validateServiceUnit();
 			this.setDataAfterServiceUnit();
-			this._PartnerDataModel.refresh();
 			this.serviceUnitEffect(false);
 			this._templateView.setProperty("/edited", true);
-			this._templateView.refresh();
-			this.getServiceUnitCombos();
+			this.setServiceUnitData();
 		},
 		
 		setDataAfterServiceUnit : function() {
@@ -394,93 +731,366 @@ sap.ui.define([
 			this._PartnerDataModel.setProperty(this._TemplatePath, oTemplate);
 		},
 
+		setServiceUnitsInput : function () {
+			let aTemplates_ServiceUnits = this._PartnerDataModel.getProperty(this._TemplatePath + "/Templates_ServiceUnits");
+			let sServiceUnitsInput = "";
+			for(let i = 0; i < aTemplates_ServiceUnits.length; i++) {
+				if (!aTemplates_ServiceUnits[i].HostingUnit_Name) {
+					aTemplates_ServiceUnits[i].HostingUnit_Name = this.getServiceUnitName(aTemplates_ServiceUnits[i].HostingUnit_Id);
+				}
+				sServiceUnitsInput = sServiceUnitsInput.concat(aTemplates_ServiceUnits[i].HostingUnit_Name + ", ");
+			}
+			sServiceUnitsInput = sServiceUnitsInput.substring(0, sServiceUnitsInput.length - 2);
+			this._templateView.setProperty("/TemplateServiceUnits", sServiceUnitsInput);
+			this._PartnerDataModel.setProperty(this._TemplatePath + "/Templates_ServiceUnits", aTemplates_ServiceUnits);
+		},
+
+		getServiceUnitName : function (SU_ID) {
+			let SU_Name;
+			let oServiceunits = this._PartnerCombosModel.getProperty("/serviceunits/d/results");
+			let indexServiceUnits = oServiceunits.findIndex(x => x.ID === SU_ID);
+			if (indexServiceUnits >= 0) {
+				SU_Name = oServiceunits[indexServiceUnits].Name;
+			}
+			return SU_Name;
+		},
+
 		//#endregion Service Unit Dialog
 
 		//#region Extensions Dialog
 
+		handleSearch: function(oEvent, column) {
+			let sValue = oEvent.getParameter("value");
+			let oFilter = new Filter(column, sap.ui.model.FilterOperator.Contains, sValue);
+			let oBinding = oEvent.getSource().getBinding("items");
+			if (oBinding) {
+				oBinding.filter([oFilter]);
+			}
+		},
+
 		setExtentionsDialogModel : function () {
-			for(var i = 0; i < this._serviceUnitCombosModel.oData.extensions.d.results.length; i++) {
-				var EId = this._serviceUnitCombosModel.oData.extensions.d.results[i].ID;
-				if (this._PartnerDataModel.oData.Templates[this._TemplateIndex].Templates_Extenstions) {
-					var index = this._PartnerDataModel.oData.Templates[this._TemplateIndex].Templates_Extenstions.findIndex(x => x.ExtensionDeployment_Id == EId);
-					if (index >= 0) {
-						this._serviceUnitCombosModel.oData.extensions.d.results[i].Extension.Selected = true;
-					} else {
-						this._serviceUnitCombosModel.oData.extensions.d.results[i].Extension.Selected = false;
+			let oExtentionsTable = [];
+			let oServiceunitsParams = this._PartnerCombosModel.getProperty("/allparams");
+			let aTemplates_ServiceUnits = this._PartnerDataModel.getProperty(this._TemplatePath + "/Templates_ServiceUnits");
+			let aTemplates_Extenstions = this._PartnerDataModel.getProperty(this._TemplatePath + "/Templates_Extenstions");
+			let SU_ID, SU_Name, Deployment_ID, Extention_ID, indexServiceUnitParams, aExtentionPath, indexExtentionTable, indexTemplates_Extenstions, bSelected;
+			if ((aTemplates_ServiceUnits) || (aTemplates_ServiceUnits.length > 0))
+			{
+				for(let i = 0; i < aTemplates_ServiceUnits.length; i++) {
+					SU_ID = aTemplates_ServiceUnits[i].HostingUnit_Id;
+					SU_Name = aTemplates_ServiceUnits[i].HostingUnit_Name;
+					indexServiceUnitParams = oServiceunitsParams.findIndex(x => x.serviceunitID === SU_ID);
+					if (indexServiceUnitParams >= 0) {
+						aExtentionPath = oServiceunitsParams[indexServiceUnitParams].extensions.d.results;
+						for(let j = 0; j < aExtentionPath.length; j++) {
+							Deployment_ID = aExtentionPath[j].ID;
+							Extention_ID = aExtentionPath[j].Extension.ID;
+							indexTemplates_Extenstions = aTemplates_Extenstions.findIndex(x => x.Extension_Id === Extention_ID);
+							if (indexTemplates_Extenstions >= 0) {
+								bSelected = true;
+							} else {
+								bSelected = false;
+							}
+							indexExtentionTable = oExtentionsTable.findIndex(x => x.ID === Extention_ID);
+							if (indexExtentionTable >= 0) {
+								oExtentionsTable[indexExtentionTable].ServiceUnits = 
+									oExtentionsTable[indexExtentionTable].ServiceUnits.concat(", " + SU_Name);
+							} else {
+								oExtentionsTable.push({
+									"Selected" : bSelected,
+									"ID" : Extention_ID,
+									"Deployment_ID" : Deployment_ID,
+									"Name" : aExtentionPath[j].Extension.Name,
+									"Version" : aExtentionPath[j].Extension.Version,
+									"Vendor" : aExtentionPath[j].Extension.Vendor,
+									"Type" : aExtentionPath[j].Extension.Type,
+									"ServiceUnits" : SU_Name,
+									"ServiceUnitsState" : "None"
+								});
+							}
+						}
 					}
 				}
 			}
-			this._serviceUnitCombosModel.refresh();
+			this._templateView.setProperty("/DialogExtentions/ExtentionsTable", oExtentionsTable);
+			this.setServiceUnitsState();
 		},
 
-		openExtensionsDialog : function(oEvent) {
-			if (!this._oExtensionsDialog) {
-				this._oExtensionsDialog = sap.ui.xmlfragment("oem-partner.view.DialogExtensions", this);
+		setServiceUnitsState : function () {
+			let aTemplates_ServiceUnits = this._PartnerDataModel.getProperty(this._TemplatePath + "/Templates_ServiceUnits");
+			let aExtentionsTable = this._templateView.getProperty("/DialogExtentions/ExtentionsTable");
+			let aServiceUnits;
+			for(let i = 0; i < aExtentionsTable.length; i++) {
+				aServiceUnits = aExtentionsTable[i].ServiceUnits.split(",");
+				aExtentionsTable[i].ServiceUnitsState = aTemplates_ServiceUnits.length === aServiceUnits.length ? "Success" : "Error";
 			}
+			this._templateView.setProperty("/DialogExtentions/ExtentionsTable", aExtentionsTable);
+		},
+
+		openExtensionsDialog : function() {
+			if (this._oExtensionsDialog) {
+				this._oExtensionsDialog.destroy();
+			}
+			this._oExtensionsDialog = sap.ui.xmlfragment("oem-partner.view.DialogExtensions", this);
 			this._oExtensionsDialog.setMultiSelect(true);
 			this.setExtentionsDialogModel();
 			this.getView().addDependent(this._oExtensionsDialog);
 			this._oExtensionsDialog.open();
 		},
-
-		handleExtensionsSearch : function(oEvent) {
+		
+		handleExtensionsSearch : function() {
 			// this.handleSearch(oEvent, "Name");
 		},
-		
+
 		onTokenUpdateExtensions : function (oEvent) {
-			var sType = oEvent.getParameter("type");
+			let sType = oEvent.getParameter("type");
 			if (sType === "removed") {
-				var iKey = parseInt(oEvent.getParameter("removedTokens")[0].getProperty("key"));
-				var sPath = this._TemplatePath + "/Templates_Extenstions";
-				var aData = this._PartnerDataModel.getProperty(sPath);
-				for(var i = 0; i < aData.length; i++) {
-					var idx;
+				let iKey = parseInt(oEvent.getParameter("removedTokens")[0].getProperty("key"));
+				let sPath = this._TemplatePath + "/Templates_Extenstions";
+				let aData = this._PartnerDataModel.getProperty(sPath);
+				let idx;
+				for(let i = 0; i < aData.length; i++) {
 					if (aData[i].ExtensionDeployment_Id === iKey) {
 						idx = i;
 					}	
 				}
 				aData.splice(idx, 1);
 				this._PartnerDataModel.setProperty(sPath, aData);
-				this._PartnerDataModel.refresh();
 				this._templateView.setProperty("/edited", true);
-				this._templateView.refresh();
 			}	
 		},
 
 		handleExtensionsDialogConfirm : function (oEvent) {
-			var aContexts = oEvent.getParameter("selectedContexts");
-			var sPath, _index, _TemplateId, extensionData;
+			let aContexts = oEvent.getParameter("selectedContexts");
+			let sPath, _index, _TemplateId, extensionData, sServiceUnitsState;
 			_TemplateId = this._PartnerDataModel.getProperty(this._TemplatePath + "/id");
-			var aTemplates_Extenstions = [];
-			for(var i = 0; i < aContexts.length; i++) {
+			let aTemplates_Extenstions = [];
+			for(let i = 0; i < aContexts.length; i++) {
 				sPath = aContexts[i].sPath;
 				_index = sPath.split("/").slice(-1).pop();
-				extensionData = this._serviceUnitCombosModel.getProperty("/extensions/d/results/" + _index);
+				extensionData = this._templateView.getProperty("/DialogExtentions/ExtentionsTable/" + _index);
+				sServiceUnitsState = this._templateView.getProperty("/DialogExtentions/ExtentionsTable/" + _index + "/ServiceUnitsState");
+				if (sServiceUnitsState === "Error") {
+					this.openExtensionsDialog();
+					MessageBox.error(this._bundle.getText("ExtensionNotSUErrorMessage"));
+					return;
+				}
 				aTemplates_Extenstions.push({
 					"TemplateId": _TemplateId,
-					"ExtensionDeployment_Id": extensionData.ID,
-         			"Extension_Id": extensionData.Extension.ID,
-         			"Name": extensionData.Extension.Name,
-         			"Version": extensionData.Extension.Version,
-         			"Vendor": extensionData.Extension.Vendor,
-         			"Type": extensionData.Extension.Type
-				});
-				
+					"ExtensionDeployment_Id": extensionData.Deployment_ID,
+         			"Extension_Id": extensionData.ID,
+         			"Name": extensionData.Name,
+         			"Version": extensionData.Version,
+         			"Vendor": extensionData.Vendor,
+         			"Type": extensionData.Type
+				});			
 			}
 			this._PartnerDataModel.setProperty(this._TemplatePath + "/Templates_Extenstions", aTemplates_Extenstions);
-			this._PartnerDataModel.refresh();
 			this._templateView.setProperty("/edited", true);
-			this._templateView.refresh();
 		},
 
 		//#endregion Extensions Dialog
 
+		//#region Backups/Packages Dialog
+
+		openBackupsPackagesDialog : function () {
+			let oSelectedKey = this._PartnerDataModel.getProperty(this._TemplatePath + "/CreationMethod");
+			switch(oSelectedKey) {
+				case "Backup":
+					this.openBackupsDialog();
+				break;
+				case "Package":
+					this.openPackagesDialog();
+				break;
+				default:
+				break;
+			}
+		},
+
+		openBackupsDialog : function() {
+			if (this._oBackupsDialog) {
+				this._oBackupsDialog.destroy();
+			}
+			this._oBackupsDialog = sap.ui.xmlfragment("oem-partner.view.DialogBackups", this);
+			this.setBackupsDialogModel();
+			this.getView().addDependent(this._oBackupsDialog);
+			this._oBackupsDialog.open();
+		},
+
+		openPackagesDialog : function() {
+			if (this._oPackagesDialog) {
+				this._oPackagesDialog.destroy();
+			}
+			this._oPackagesDialog = sap.ui.xmlfragment("oem-partner.view.DialogPackages", this);
+			this.setPackagesDialogModel();
+			this.getView().addDependent(this._oPackagesDialog);
+			this._oPackagesDialog.open();
+		},
+
+		setBackupsDialogModel : function () {
+			let oBackupsTable = [];
+			let oServiceunitsParams = this._PartnerCombosModel.getProperty("/allparams");
+			let aTemplates_ServiceUnits = this._PartnerDataModel.getProperty(this._TemplatePath + "/Templates_ServiceUnits");
+			let SU_ID, SU_Name, indexServiceUnitParams, aBackupPath, indexBackupsTable;
+			if ((aTemplates_ServiceUnits) || (aTemplates_ServiceUnits.length > 0))
+			{
+				for(let i = 0; i < aTemplates_ServiceUnits.length; i++) {
+					SU_ID = aTemplates_ServiceUnits[i].HostingUnit_Id;
+					SU_Name = aTemplates_ServiceUnits[i].HostingUnit_Name;
+					indexServiceUnitParams = oServiceunitsParams.findIndex(x => x.serviceunitID === SU_ID);
+					if (indexServiceUnitParams >= 0) {
+						aBackupPath = oServiceunitsParams[indexServiceUnitParams].backupPath;
+						for(let j = 0; j < aBackupPath.length; j++) {
+							indexBackupsTable = oBackupsTable.findIndex(x => x.Path === aBackupPath[j].Path);
+							if (indexBackupsTable >= 0) {
+								oBackupsTable[indexBackupsTable].ServiceUnits = 
+									oBackupsTable[indexBackupsTable].ServiceUnits.concat(" , " + SU_Name);
+							} else {
+								oBackupsTable.push({
+									"Name" : aBackupPath[j].Name,
+									"Path" : aBackupPath[j].Path,
+									"ServiceUnits" : SU_Name,
+									"ServiceUnitsState" : "None"
+								});
+							}
+						}
+					}
+				}
+			}
+			this._templateView.setProperty("/DialogBackups/BackupsTable", oBackupsTable);
+			this.setBackupsState();
+		},
+
+		setBackupsState : function () {
+			let aTemplates_ServiceUnits = this._PartnerDataModel.getProperty(this._TemplatePath + "/Templates_ServiceUnits");
+			let aBackupsTable = this._templateView.getProperty("/DialogBackups/BackupsTable");
+			let aServiceUnits;
+			for(let i = 0; i < aBackupsTable.length; i++) {
+				aServiceUnits = aBackupsTable[i].ServiceUnits.split(",");
+				aBackupsTable[i].ServiceUnitsState = aTemplates_ServiceUnits.length === aServiceUnits.length ? "Success" : "Error";
+			}
+			this._templateView.setProperty("/DialogBackups/BackupsTable", aBackupsTable);
+		},
+
+		setPackagesDialogModel : function () {
+			let oPackagesTable = [];
+			let oServiceunitsParams = this._PartnerCombosModel.getProperty("/allparams");
+			let aTemplates_ServiceUnits = this._PartnerDataModel.getProperty(this._TemplatePath + "/Templates_ServiceUnits");
+			let SU_ID, SU_Name, indexServiceUnitParams, aPackagePath, indexPackagesTable;
+			if ((aTemplates_ServiceUnits) || (aTemplates_ServiceUnits.length > 0))
+			{
+				for(let i = 0; i < aTemplates_ServiceUnits.length; i++) {
+					SU_ID = aTemplates_ServiceUnits[i].HostingUnit_Id;
+					SU_Name = aTemplates_ServiceUnits[i].HostingUnit_Name;
+					indexServiceUnitParams = oServiceunitsParams.findIndex(x => x.serviceunitID === SU_ID);
+					if (indexServiceUnitParams >= 0) {
+						aPackagePath = oServiceunitsParams[indexServiceUnitParams].packagePath;
+						for(let j = 0; j < aPackagePath.length; j++) {
+							indexPackagesTable = oPackagesTable.findIndex(x => x.Path === aPackagePath[j].Path);
+							if (indexPackagesTable >= 0) {
+								oPackagesTable[indexPackagesTable].ServiceUnits = 
+									oPackagesTable[indexPackagesTable].ServiceUnits.concat(", " + SU_Name);
+							} else {
+								oPackagesTable.push({
+									"FileName": aPackagePath[j].FileName,
+									"Path": aPackagePath[j].Path,
+									"ServiceUnits": SU_Name,
+									"ServiceUnitsState" : "None"
+								});
+							}
+						}
+					}
+				}
+			}
+			this._templateView.setProperty("/DialogPackages/PackagesTable", oPackagesTable);
+			this.setPackagesState();
+		},
+
+		setPackagesState : function () {
+			let aTemplates_ServiceUnits = this._PartnerDataModel.getProperty(this._TemplatePath + "/Templates_ServiceUnits");
+			let aPackagesTable = this._templateView.getProperty("/DialogPackages/PackagesTable");
+			let aServiceUnits;
+			for(let i = 0; i < aPackagesTable.length; i++) {
+				aServiceUnits = aPackagesTable[i].ServiceUnits.split(",");
+				aPackagesTable[i].ServiceUnitsState = aTemplates_ServiceUnits.length === aServiceUnits.length ? "Success" : "Error";
+			}
+			this._templateView.setProperty("/DialogPackages/PackagesTable", aPackagesTable);
+		},
+
+		handleBackupsPackagesDialogSubmit : function (oEvent) {
+			let aContexts = oEvent.getParameter("selectedContexts");
+			let sPath = aContexts[0].sPath;
+			let _index = sPath.split("/").slice(-1).pop();
+			let sServiceUnitsState = this._templateView.getProperty("/DialogBackups/BackupsTable/" + _index + "/ServiceUnitsState");
+			if (sServiceUnitsState === "Error") {
+				this.openBackupsPackagesDialog();
+				MessageBox.error(this._bundle.getText("BackupPackageNotSUErrorMessage"));
+				return;
+			}
+			let Path, Name;
+			let oSelectedKey = this._PartnerDataModel.getProperty(this._TemplatePath + "/CreationMethod");
+			switch(oSelectedKey) {
+				case "Backup":
+					Path = this._templateView.getProperty("/DialogBackups/BackupsTable/" + _index + "/Path");
+					Name = this._templateView.getProperty("/DialogBackups/BackupsTable/" + _index + "/Name");
+				break;
+				case "Package":
+					Path = this._templateView.getProperty("/DialogPackages/PackagesTable/" + _index + "/Path");
+					Name = this._templateView.getProperty("/DialogPackages/PackagesTable/" + _index + "/FileName");
+				break;
+				default:
+				break;
+			}
+			this._PartnerDataModel.setProperty(this._TemplatePath + "/BackupPackage", Path);
+			this._PartnerDataModel.setProperty(this._TemplatePath + "/BackupPackageName", Name);
+			
+			this._templateView.setProperty("/edited", true);
+			this._PartnerDataModel.setProperty(this._TemplatePath + "/LocalSettings", "");
+			this._PartnerDataModel.setProperty(this._TemplatePath + "/LocalSettingsName", "");
+			this._PartnerDataModel.setProperty(this._TemplatePath + "/ChartOfAccount", "");
+			this._PartnerDataModel.setProperty(this._TemplatePath + "/SystemLanguage", null);
+
+			this.validateBackupPackage();
+			if (oSelectedKey === "Package") {
+				this.tryGetSolutionPackageData();
+			}
+		},
+
+		setBackupPackageName : function () {
+			let oTemplate = this._PartnerDataModel.getProperty(this._TemplatePath);
+			let aServiceunitsParams = this.getServiceUnitParams();
+			let backupPackageName = "";
+			if (aServiceunitsParams) {
+				let oSelectedKey = this._PartnerDataModel.getProperty(this._TemplatePath + "/CreationMethod");
+				let index;
+				switch(oSelectedKey) {
+					case "Backup":
+						let aBackupPath = aServiceunitsParams.backupPath;
+						index = aBackupPath.findIndex(x => x.Path==oTemplate.BackupPackage);
+						backupPackageName = aBackupPath[index].Name;
+					break;
+					case "Package":
+						let aPackagePath = aServiceunitsParams.packagePath;
+						index = aPackagePath.findIndex(x => x.Path==oTemplate.BackupPackage);
+						backupPackageName = aPackagePath[index].FileName;
+					break;
+					default:
+					break;
+				}
+				this._PartnerDataModel.setProperty(this._TemplatePath + "/BackupPackageName", backupPackageName);
+			}
+		},
+
+		//#endregion Backups/Packages Dialog
+
 		//#region License File Dialog
 
 		openLicenseFileDialog : function(oEvent) {
-			if (!this._oLicenseFileDialog) {
-				this._oLicenseFileDialog = sap.ui.xmlfragment("oem-partner.view.DialogLicenseFile", this);
+
+			if (this._oLicenseFileDialog) {
+				this._oLicenseFileDialog.destroy();
 			}
+			this._oLicenseFileDialog = sap.ui.xmlfragment("oem-partner.view.DialogLicenseFile", this);
 			this.getView().addDependent(this._oLicenseFileDialog);
 			this._oLicenseFileDialog.open();
 		},
@@ -490,11 +1100,11 @@ sap.ui.define([
 		},
 
 		handleLicenseFileDialogConfirm : function (oEvent) {
-			var aContexts = oEvent.getParameter("selectedContexts");
-			var sPath = aContexts[0].sPath;
-			var _index = sPath.split("/").slice(-1).pop();
+			let aContexts = oEvent.getParameter("selectedContexts");
+			let sPath = aContexts[0].sPath;
+			let _index = sPath.split("/").slice(-1).pop();
 
-			var temp = this._PartnerCombosModel.oData.licenseFilesModules[_index].LicenseFile_Id;
+			let temp = this._PartnerCombosModel.oData.licenseFilesModules[_index].LicenseFile_Id;
 			this._PartnerDataModel.oData.Templates[this._TemplateIndex].LicenseFile_Id = temp;
 			temp = this._PartnerCombosModel.oData.licenseFilesModules[_index].InstallationNumber;
 			this._PartnerDataModel.oData.Templates[this._TemplateIndex].License_FileName = temp;
@@ -511,12 +1121,12 @@ sap.ui.define([
 		
 		setAssignLicensesModel : function() {
 			this._PartnerCombosModel.oData.licensesModules = [];
-			var LicenseFileId_PartnerModel = this._PartnerDataModel.oData.Templates[this._TemplateIndex].LicenseFile_Id;
-			for(var i = 0; i < this._PartnerCombosModel.oData.licensemodules.length; i++) {
-				var licenseFileID_ComboModel = this._PartnerCombosModel.oData.licensemodules[i].d.licenseFileID;
+			let LicenseFileId_PartnerModel = this._PartnerDataModel.oData.Templates[this._TemplateIndex].LicenseFile_Id;
+			for(let i = 0; i < this._PartnerCombosModel.oData.licensemodules.length; i++) {
+				let licenseFileID_ComboModel = this._PartnerCombosModel.oData.licensemodules[i].d.licenseFileID;
 				if (licenseFileID_ComboModel == LicenseFileId_PartnerModel)
 				{
-					for(var j = 0; j < this._PartnerCombosModel.oData.licensemodules[i].d.results.length; j++) {
+					for(let j = 0; j < this._PartnerCombosModel.oData.licensemodules[i].d.results.length; j++) {
 						this._PartnerCombosModel.oData.licensesModules.push({
 							"Type": this._PartnerCombosModel.oData.licensemodules[i].d.results[j].Type,
 							"Description": this._PartnerCombosModel.oData.licensemodules[i].d.results[j].Description,
@@ -537,9 +1147,9 @@ sap.ui.define([
 		},
 
 		setAssignLicensesSelected : function(licenses) {
-			for(var i = 0; i < this._PartnerCombosModel.oData.licensesModules.length; i++) {
-				var type = this._PartnerCombosModel.oData.licensesModules[i].Type;
-				var index = licenses.findIndex(x => x.LicenseType==type);
+			for(let i = 0; i < this._PartnerCombosModel.oData.licensesModules.length; i++) {
+				let type = this._PartnerCombosModel.oData.licensesModules[i].Type;
+				let index = licenses.findIndex(x => x.LicenseType==type);
 				if (index >= 0)
 					this._PartnerCombosModel.oData.licensesModules[i].Selected = true;
 				else
@@ -554,10 +1164,10 @@ sap.ui.define([
 		},
 
 		openOperatorsLicensesDialog : function(oEvent) {
-			var aContexts = oEvent.getSource().getParent().getBindingContext("PartnerData");
-			var sPath = aContexts.sPath;
-			var _index = sPath.split("/").slice(-1).pop();
-			var _User_Id = this._PartnerDataModel.oData.Templates[this._TemplateIndex].Templates_Operators[_index].User_Id;
+			let aContexts = oEvent.getSource().getParent().getBindingContext("PartnerData");
+			let sPath = aContexts.sPath;
+			let _index = sPath.split("/").slice(-1).pop();
+			let _User_Id = this._PartnerDataModel.oData.Templates[this._TemplateIndex].Templates_Operators[_index].User_Id;
 			this._PartnerDataModel.oData.Temp_Status = "dialogLicenseOperator," + _index + "," + _User_Id;
 			this.openAssignLicensesDialog(this._PartnerDataModel.oData.Templates[this._TemplateIndex].Templates_Operators[_index].Operators_licenses);
 		},
@@ -568,10 +1178,10 @@ sap.ui.define([
 			}
 			this.setAssignLicensesSelected(aLicenses);
 			
-			if (!this._oAssignLicensesDialog) {
-				this._oAssignLicensesDialog = sap.ui.xmlfragment("oem-partner.view.DialogAssignLicenses", this);
+			if (this._oAssignLicensesDialog) {
+				this._oAssignLicensesDialog.destroy();	
 			}
-
+			this._oAssignLicensesDialog = sap.ui.xmlfragment("oem-partner.view.DialogAssignLicenses", this);
 			this._oAssignLicensesDialog.setMultiSelect(true);
 			this.getView().addDependent(this._oAssignLicensesDialog);
 			this._oAssignLicensesDialog.open();
@@ -582,13 +1192,13 @@ sap.ui.define([
 		},
 
 		onTokenUpdateLicenseType : function (oEvent) {
-			var sType = oEvent.getParameter("type");
+			let sType = oEvent.getParameter("type");
 			if (sType === "removed") {
-				var sKey = oEvent.getParameter("removedTokens")[0].getProperty("key");
-				var sPath = this._TemplatePath + "/Templates_Licenses";
-				var aData = this._PartnerDataModel.getProperty(sPath);
-				for(var i = 0; i < aData.length; i++) {
-					var idx;
+				let sKey = oEvent.getParameter("removedTokens")[0].getProperty("key");
+				let sPath = this._TemplatePath + "/Templates_Licenses";
+				let aData = this._PartnerDataModel.getProperty(sPath);
+				let idx;
+				for(let i = 0; i < aData.length; i++) {
 					if (aData[i].LicenseType === sKey) {
 						idx = i;
 					}	
@@ -601,16 +1211,16 @@ sap.ui.define([
 		},
 
 		onTokenUpdateOperatorsLicenseType : function (oEvent) {
-			var sType = oEvent.getParameter("type");
-			var aContexts = oEvent.getSource().getParent().getBindingContext("PartnerData");
-			var sPath = aContexts.sPath;
-			var _indexOperator = sPath.split("/").slice(-1).pop();
+			let sType = oEvent.getParameter("type");
+			let aContexts = oEvent.getSource().getParent().getBindingContext("PartnerData");
+			let sPath = aContexts.sPath;
+			let _indexOperator = sPath.split("/").slice(-1).pop();
 			if (sType === "removed") {
-				var sKey = oEvent.getParameter("removedTokens")[0].getProperty("key");
-				var sPath = this._TemplatePath + "/Templates_Operators/" + _indexOperator + "/Operators_licenses";
-				var aData = this._PartnerDataModel.getProperty(sPath);
-				for(var i = 0; i < aData.length; i++) {
-					var idx;
+				let sKey = oEvent.getParameter("removedTokens")[0].getProperty("key");
+				let sPath = this._TemplatePath + "/Templates_Operators/" + _indexOperator + "/Operators_licenses";
+				let aData = this._PartnerDataModel.getProperty(sPath);
+				let idx;
+				for(let i = 0; i < aData.length; i++) {
 					if (aData[i].LicenseType === sKey) {
 						idx = i;
 					}	
@@ -623,10 +1233,10 @@ sap.ui.define([
 		},
 
 		handleAssignLicensesDialogConfirm : function (oEvent) {
-			var aContexts = oEvent.getParameter("selectedContexts");
-			var sPath, _indexOperator, _indexModule, _LicenseType;
-			var _TemplateId = this._PartnerDataModel.oData.Templates[this._TemplateIndex].id;
-			var _User_Id;
+			let aContexts = oEvent.getParameter("selectedContexts");
+			let sPath, _indexOperator, _indexModule, _LicenseType;
+			let _TemplateId = this._PartnerDataModel.oData.Templates[this._TemplateIndex].id;
+			let _User_Id;
 			if (this._PartnerDataModel.oData.Temp_Status == "dialogLicenseType") {
 				this._PartnerDataModel.oData.Templates[this._TemplateIndex].Templates_Licenses = [];
 			}
@@ -635,7 +1245,7 @@ sap.ui.define([
 				_User_Id = parseInt(this._PartnerDataModel.oData.Temp_Status.split(",")[2]);
 				this._PartnerDataModel.oData.Templates[this._TemplateIndex].Templates_Operators[_indexOperator].Operators_licenses = [];
 			}
-			for(var i = 0; i < aContexts.length; i++) {
+			for(let i = 0; i < aContexts.length; i++) {
 				sPath = aContexts[i].sPath;
 				_indexModule = sPath.split("/").slice(-1).pop();
 				_LicenseType = this._PartnerCombosModel.oData.licensesModules[_indexModule].Type;
@@ -681,9 +1291,10 @@ sap.ui.define([
 		},
 
 		onAddOperator : function() {
-			if (!this._oOperatorDialog) {
-				this._oOperatorDialog = sap.ui.xmlfragment("oem-partner.view.DialogOperator", this);
+			if (this._oOperatorDialog) {
+				this._oOperatorDialog.destroy();
 			}
+			this._oOperatorDialog = sap.ui.xmlfragment("oem-partner.view.DialogOperator", this);
 			this.setOperatorsModel();
 			this.getView().addDependent(this._oOperatorDialog);
 			jQuery.sap.syncStyleClass("sapUiSizeCompact", this.getView(), this._oOperatorDialog);
@@ -720,9 +1331,74 @@ sap.ui.define([
 			this._templateView.setProperty("/edited", true);
 		},
 
+		toggleServiceLayer : function () {
+			let bIsServiceLayer = this.isServiceLayer();
+
+			if (bIsServiceLayer) {
+				this.addServiceLayerOpertor();
+			}
+		},
+
+		isServiceLayer : function () {
+			let sServerType = this._PartnerDataModel.getProperty(this._TemplatePath + "/ServerType");
+			if ((!sServerType) || !(sServerType.includes("HANA"))) {
+				return false;
+			}
+
+			let sServiceLayerOpertor = this._PartnerDataModel.getProperty("/Cloud_Setting/0/SLUserName");
+			if (!sServiceLayerOpertor) {
+				return false;
+			}
+
+			return true;
+		},
+
+		addServiceLayerOpertor : function () {
+			let sServiceLayerOpertor = this._PartnerDataModel.getProperty("/Cloud_Setting/0/SLUserName");
+			let aOperatorsModel = this._PartnerCombosModel.getProperty("/operators/d/results");
+			let indexFound = aOperatorsModel.findIndex(x => x.SystemUsername == sServiceLayerOpertor);
+			let aTemplates_Operators = this._PartnerDataModel.getProperty(this._TemplatePath + "/Templates_Operators");			
+			let indexFoundTemplateOperator = -1;
+			if (!aTemplates_Operators) {
+				aTemplates_Operators = [];
+			} else {
+				indexFoundTemplateOperator = aTemplates_Operators.findIndex(x => x.SystemUser == sServiceLayerOpertor);
+			}
+			if ((indexFound >= 0) && (indexFoundTemplateOperator === -1)) {
+				let _TemplateId = this._PartnerDataModel.getProperty(this._TemplatePath + "/id");
+				let _User_Id = aOperatorsModel[indexFound].ID;
+				let _SystemUser = aOperatorsModel[indexFound].SystemUsername;
+				let _SuperUser = aOperatorsModel[indexFound].IsSuperSBOUser;
+				let _PowerUser = aOperatorsModel[indexFound].IsPowerSBOUser;
+				let _Status = aOperatorsModel[indexFound].Status;
+
+				aTemplates_Operators.push({
+					"TemplateId": _TemplateId,
+					"User_Id": _User_Id,
+					"UserCode": _SystemUser,
+					"SystemUser": _SystemUser,
+					"SuperUser": _SuperUser,
+					"PowerUser": _PowerUser,
+					"Status": _Status
+				});
+				this._PartnerDataModel.setProperty(this._TemplatePath + "/Templates_Operators", aTemplates_Operators);
+			}
+		},
+
 		//#endregion Operator Dialog
 
 		//#region SolutionPackage Model
+
+		tryGetSolutionPackageData : function () {
+			let oTemplate = this._PartnerDataModel.getProperty(this._TemplatePath);
+			if ((oTemplate.CreationMethod === "Package") && 
+				(oTemplate.BackupPackage)) {
+				this.getSolutionPackageData({
+					"serviceunit" : oTemplate.Templates_ServiceUnits[0].HostingUnit_Id,
+					"packagePath" : oTemplate.BackupPackage
+				});
+			}
+		},
 
 		getSolutionPackageData : function (data) {
             let methodName = this.getConfModel().getProperty("/server/methodes/getSolutionPackageContent");
@@ -730,8 +1406,12 @@ sap.ui.define([
             $.ajax({
                 url: reqURL,
                 type: 'POST',
-				dataType: 'json',
-				contentType: "application/json; charset=utf-8",
+                xhrFields: {
+                    withCredentials: true
+                },
+                crossDomain: true,
+                dataType: 'json',
+                contentType: "application/x-www-form-urlencoded",
                 data: JSON.stringify(data),
                 success: function(result){
 					this.handleGetSolutionPackageDataSuccess(result);
@@ -742,7 +1422,15 @@ sap.ui.define([
               });
 		},
 		
-		handleGetSolutionPackageDataSuccess : function (result) {
+		handleGetSolutionPackageDataSuccess : function (data) {
+            if (this.isSamlRequest(data)) {
+                this.handleSsoRequest(data);
+            } else {
+                this.setSolutionPackageData(data);
+            }
+		},
+		
+		setSolutionPackageData : function (result) {
 			this.setChartOfAccountsCombos(result.coa, true);
 			this._templateView.setProperty("/chartOfAccount", true);
 
@@ -825,73 +1513,17 @@ sap.ui.define([
 				this._templateView.setProperty("/chartOfAccount", true);
 				this._templateView.setProperty("/systemLanguesge", true);
 			}
-			
-			let aBackupPackage;
-			let aBackupPath;
-			switch(oSelectedKey) {
-				case "Backup":
-					aBackupPath = this._serviceUnitCombosModel.getProperty("/backupPath");
-					aBackupPackage = [{"Code": "", "Name": ""}];
-					for(var i = 0; i < aBackupPath.length; i++) {
-						aBackupPackage.push({
-							"Code": aBackupPath[i].Path, 
-							"Name": aBackupPath[i].Name});
-					}
-					break;
-				case "Package":
-					aBackupPath = this._serviceUnitCombosModel.getProperty("/packagePath");
-					aBackupPackage = [{"Code": "", "Name": ""}];
-					for(var i = 0; i < aBackupPath.length; i++) {
-						aBackupPackage.push({
-							"Code": aBackupPath[i].Path, 
-							"Name": aBackupPath[i].FileName});
-					}
-					break;
-				default:
-					aBackupPackage = [];
-			}
-			this._serviceUnitCombosModel.setProperty("/backupPackage", aBackupPackage);
-
+		
 			this.validateBackupPackage();
 			this.validateLocalSettings();
 			this.validateChartOfAccount();
 			this.validateSystemLanguesge();
 		},
 
-		onChangeBackupPackage : function (oEvent) {
-			if (oEvent) {
-				this._templateView.setProperty("/edited", true);
-				this._PartnerDataModel.setProperty(this._TemplatePath + "/LocalSettings", "");
-				this._PartnerDataModel.setProperty(this._TemplatePath + "/LocalSettingsName", "");
-				this._PartnerDataModel.setProperty(this._TemplatePath + "/ChartOfAccount", "");
-				this._PartnerDataModel.setProperty(this._TemplatePath + "/SystemLanguage", null);
-			}
-
-			this.validateBackupPackage(oEvent);
-
-			// Populate BackupPackageName key after BackupPackage key was changed.
-			let oTemplate = this._PartnerDataModel.getProperty(this._TemplatePath);
-			let aBackupPath = this._serviceUnitCombosModel.getProperty("/backupPackage");
-			let index = aBackupPath.findIndex(x => x.Code==oTemplate.BackupPackage);
-			if (index >= 0) {
-				this._PartnerDataModel.setProperty(this._TemplatePath + "/BackupPackageName", aBackupPath[index].Name);
-			} else {
-				this._PartnerDataModel.setProperty(this._TemplatePath + "/BackupPackageName", "");
-			}
-
-			if ((oTemplate.CreationMethod == "Package") && 
-				(oTemplate.BackupPackage)) {
-                this.getSolutionPackageData({
-					"serviceunit" : oTemplate.HostingUnit_Id,
-					"packagePath" : oTemplate.BackupPackage
-				});
-            }
-		},
-
 		// Populate LocalSettingsName key after LocalSettings key was changed.
 		setLocalSettingsName : function () {
 			let code = this._PartnerDataModel.getProperty(this._TemplatePath + "/LocalSettings");
-			let arr = this._serviceUnitCombosModel.getProperty("/localSettings");
+			let arr = this._PartnerCombosModel.getProperty("/localSettings");
 			let index = arr.findIndex(x => x.Code==code);
 			if (index >= 0) {
 				this._PartnerDataModel.setProperty(this._TemplatePath + "/LocalSettingsName", arr[index].Name);
@@ -920,7 +1552,7 @@ sap.ui.define([
 		// Populate SystemLanguageName key after SystemLanguage key was changed.
 		setSystemLanguageName : function () {
 			let code = this._PartnerDataModel.getProperty(this._TemplatePath + "/SystemLanguage");
-			let arr = this._serviceUnitCombosModel.getProperty("/systemLanguesge");
+			let arr = this._PartnerCombosModel.getProperty("/systemLanguesge");
 			let index = arr.findIndex(x => x.Code==code);
 			if (index >= 0) {
 				this._PartnerDataModel.setProperty(this._TemplatePath + "/SystemLanguageName", arr[index].Name);
@@ -949,8 +1581,16 @@ sap.ui.define([
 		},
 
 		onDeleteOperator : function(oEvent) {
-			let msg = this._bundle.getText("OperatorDeleteMsgs");
 			let idx = oEvent.getParameter('listItem').getBindingContext("PartnerData").getPath().split("/")[4];
+			let aTemplatesOperators = this._PartnerDataModel.getProperty(this._TemplatePath + "/Templates_Operators");
+			if (this.isServiceLayer()) {
+				if (aTemplatesOperators[idx].SystemUser === this._PartnerDataModel.getProperty("/Cloud_Setting/0/SLUserName")) {
+					let msg = this._bundle.getText("ServiceLayerOperatorDeleteMsgs");
+					MessageBox.warning(msg);
+					return;
+				}
+			}
+			let msg = this._bundle.getText("OperatorDeleteMsgs");
 			MessageBox.warning(
 				msg,
 				{
@@ -959,7 +1599,6 @@ sap.ui.define([
 					initialFocus: MessageBox.Action.CANCEL,
 					onClose: function(sAction) {
 						if (sAction == "YES") {
-							let aTemplatesOperators = this._PartnerDataModel.getProperty(this._TemplatePath + "/Templates_Operators");
 							aTemplatesOperators.splice(idx, 1);
 							this._PartnerDataModel.setProperty(this._TemplatePath + "/Templates_Operators", aTemplatesOperators);
 							this._templateView.setProperty("/edited", true);
@@ -1020,14 +1659,14 @@ sap.ui.define([
 			
 			let C_index = this._countriesDataModel.getProperty("/Countries").findIndex(x => x.Code==sValue);
 			if (C_index >= 0) {
-				var C_Name = this._countriesDataModel.getProperty("/Countries/" + C_index + "/Name");
+				let C_Name = this._countriesDataModel.getProperty("/Countries/" + C_index + "/Name");
 				this._PartnerDataModel.setProperty(this._TemplatePath + "/Country_Name", C_Name);
 			}
 		},
 
 		validateServiceUnit : function () {
-			let sValue = this._PartnerDataModel.getProperty(this._TemplatePath + "/HostingUnit_Name");
-            if (!sValue) {
+			let aTemplates_ServiceUnits = this._PartnerDataModel.getProperty(this._TemplatePath + "/Templates_ServiceUnits");
+            if (aTemplates_ServiceUnits.length === 0) {
 				if (this._templateView.getProperty("/isSaving")) {
 					this._templateView.setProperty("/serviceUnitVS", "Error");
 				}
@@ -1036,7 +1675,7 @@ sap.ui.define([
             }
 		},
 
-		validateBackupPackage : function (oEvent) {
+		validateBackupPackage : function () {
 			let isRequired = ["Backup", "Package"].includes(this._PartnerDataModel.getProperty(this._TemplatePath + "/CreationMethod"));
 			let sValue = this._PartnerDataModel.getProperty(this._TemplatePath + "/BackupPackage");
             if ((isRequired) && (!sValue)) {
@@ -1161,12 +1800,12 @@ sap.ui.define([
 
 		onSave : function() {
 			if (!this.isValidation()) {
-                var msg = this._bundle.getText("TemplateValidationError");
+                let msg = this._bundle.getText("TemplateValidationError");
                 MessageBox.error(msg);
                 return;
 			}
 			if (this.isDuplicateCountryAndPackage()) {
-                var msg = this._bundle.getText("TemplateDuplucateCountryPackageError");
+                let msg = this._bundle.getText("TemplateDuplucateCountryPackageError");
                 MessageBox.error(msg);
                 return;
             }
@@ -1184,7 +1823,7 @@ sap.ui.define([
 				return;
 			}
 
-			var msg = this._bundle.getText("TemplateDiscardMsgs");
+			let msg = this._bundle.getText("TemplateDiscardMsgs");
 			MessageBox.warning(
 				msg,
 				{

@@ -75,9 +75,6 @@
                                     <Text text="{i18n>IndustryPackageColumnName}" />
                                 </Column>
                                 <Column>
-                                    <Text text="{i18n>ServiceUnitColumnName}" />
-                                </Column>
-                                <Column>
                                     <Text text="{i18n>CreationMethodColumnName}" />
                                 </Column>
                                 <Column>
@@ -90,7 +87,6 @@
                                     <Text text="{PartnerData>Name}" />
                                     <Text text="{PartnerData>Country_Name}" />
                                     <Text text="{PartnerData>IndPackageName}" />
-                                    <Text text="{PartnerData>HostingUnit_Name}" />
                                     <Text text="{PartnerData>CreationMethod}" />
                                     <Text 
                                         text="{PartnerData>BackupPackage}" 

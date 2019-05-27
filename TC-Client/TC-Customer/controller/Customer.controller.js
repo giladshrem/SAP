@@ -23,10 +23,16 @@ sap.ui.define([
                 "contactLastName" : "",
                 "contactEmail" : "",
                 "contactPhone" : "",
+                "SLaddress":"",
+                "SLphone1":"",
+                "SLphone2":"",
+                "SLemail":"",
+                "SLfax":"",
                 "financialPeriods" : "Yearly",
                 "startFiscalYear" : "2018-01-01",
                 "UPNSuffix" : "",
-                "Users" : [ ]
+                "Users" : [ ],
+                "operator" : ""
             };
             this._customerModel = new JSONModel(this.oFormData);
             this.getView().setModel(this._customerModel);
@@ -40,6 +46,7 @@ sap.ui.define([
             this._viewData = {
                 "userTableTitle" : this._bundle.getText("userTableTitle"),
                 "version" : ver,
+                "isServiceLayer" :false,
                 "confirmButtonEnabled" : true,
                 "isUPN" : true,
                 "userMaxLength" : 20,
@@ -70,6 +77,9 @@ sap.ui.define([
         },
         
         setUriParameters : function () {
+            let sOperator = jQuery.sap.getUriParameters().get("operator");
+            this._customerModel.setProperty("/operator", sOperator);
+
             let sPackage = jQuery.sap.getUriParameters().get("p");
             if (!sPackage) {
                 sPackage = "0";
@@ -111,6 +121,7 @@ sap.ui.define([
                 iMaxUsers = 0;
             }
             this._customerModel.setProperty("/maxUsers", iMaxUsers);
+
         },
 
         addUserTableAggregation : function () {
@@ -158,8 +169,7 @@ sap.ui.define([
         },
 
         getPartnerGeneralData : function (data) {
-            let methodName = this.getConfModel().getProperty("/server/methodes/getPartnerGeneralData");
-            let reqURL = this.getServerURL() + methodName;
+            let reqURL = this.getRequestURL("/server/methodes/getPartnerGeneralData");
 			return $.ajax({
                 url: reqURL,
                 type: 'POST',
@@ -197,6 +207,51 @@ sap.ui.define([
         },
 
         //#endregion Init
+
+		//#region Partner Service Layer Model
+
+		getPartnerServiceLayerData : function (data) {
+            let reqURL = this.getRequestURL("/server/methodes/getPartnerServiceLayerData");
+            $.ajax({
+                url: reqURL,
+                type: 'POST',
+				dataType: 'json',
+				contentType: "application/json; charset=utf-8",
+                data: JSON.stringify(data),
+                success: function(result){
+					this.handleGetPartnerServiceLayerDataSuccess(result);
+                }.bind(this),
+                error: function(error) {
+					this.handleGetPartnerServiceLayerDataErrors(error);
+                 }.bind(this)               
+              });
+		},
+
+        handleGetPartnerServiceLayerDataSuccess : function (result) {
+            let slUser, serverType;
+            if (this.isKeyOK(result, 'ServiceLayerUser', 'string')) {
+                slUser = result.ServiceLayerUser;
+            }
+            if (this.isKeyOK(result, 'ServerType', 'string')) {
+                serverType = result.ServerType;
+            }
+
+            let oTitle = this.byId('companyContactTitle');
+            if ((slUser) && (serverType.includes("HANA"))) {
+                oTitle.setText(this._bundle.getText("companyContactTitle"));
+                this._viewModel.setProperty("/isServiceLayer", true);
+            } else {
+                oTitle.setText("");
+                this._viewModel.setProperty("/companyContactTitle", "");
+                this._viewModel.setProperty("/isServiceLayer", false);
+            }
+        },
+
+        handleGetPartnerServiceLayerDataErrors : function (result) {
+            MessageBox.error(this._bundle.getText("serverErrorMessage"));
+        },
+
+        //#endregion Partner Service Layer Model
 
         //#region MessagePopover
 
@@ -313,6 +368,8 @@ sap.ui.define([
             let id = "country";
             let sValue = this._customerModel.getProperty("/" + id);
             this.setRequiredFieldErrorMessage(((!sValue) || (sValue == "XX")), id);
+            let packageId = this._customerModel.getProperty("/IndPackageId");
+            this.getPartnerServiceLayerData({"packageId" : packageId, "country": sValue});
         },
 
         validateContactFirstName : function (oEvent) {
@@ -407,8 +464,10 @@ sap.ui.define([
                 this.setColumnValueState("EmailUser", idx, "Success", "", "");
                 return;
             }
+            let sOperator = this._customerModel.getProperty("/operator");
             let methodName = this.getConfModel().getProperty("/server/methodes/validateUserName");
-            let reqURL = this.getServerURL() + methodName + "/" + username;
+            methodName = methodName.replace("{0}", username).replace("{1}", sOperator);
+            let reqURL = this.getServerURL() + methodName;
             $.ajax({
                 url: reqURL,
                 type: 'GET',
@@ -445,8 +504,12 @@ sap.ui.define([
                     valueState = "Success";
                 }
             } else if (result.hasOwnProperty('errors')) {
-                errorMessage = this.getUserErrorText(result.errors[0].errCode);
-                valueState = "Error";
+                if (result.errors[0].errCode == "1003") {
+                    valueState = "Success";
+                } else {
+                    errorMessage = this.getUserErrorText(result.errors[0].errCode);
+                    valueState = "Error";
+                }
             } else {
                 errorMessage = this._bundle.getText(column + "Error");
                 valueState = "Error";

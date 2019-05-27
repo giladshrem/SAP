@@ -33,7 +33,7 @@
 					title="{i18n>companyInformationTitle}"
 					labelSpanXL="12"
 					labelSpanL="12"
-					labelSpanM="4"
+					labelSpanM="12"
 					labelSpanS="12"
 					adjustLabelSpan="false"
 					emptySpanXL="0"
@@ -42,7 +42,8 @@
 					emptySpanS="0"
 					columnsXL="3"
 					columnsL="3"
-					columnsM="2"
+					columnsM="3"
+					columnsS="3"
 					singleContainerFullSize="false" >
 					<form:content>
 						<core:Title text="{i18n>companyDetailsTitle}" />
@@ -97,6 +98,17 @@
 							valueState="{customerView>/valueState/contactPhone}"
 							valueStateText="{i18n>contactPhoneValueStateText}"
 							liveChange="validateContactPhone" />
+					<core:Title id="companyContactTitle" text="" />
+						<Label text="{i18n>companyContactAddress}" visible="{customerView>/isServiceLayer}"/>
+						<Input value="{/SLaddress}" visible="{customerView>/isServiceLayer}" />
+						<Label text="{i18n>companyContactPhone1}" visible="{customerView>/isServiceLayer}" />
+						<Input value="{/SLphone1}" visible="{customerView>/isServiceLayer}" />
+						<Label text="{i18n>companyContactPhone2}" visible="{customerView>/isServiceLayer}" />
+						<Input value="{/SLphone2}" visible="{customerView>/isServiceLayer}" />
+						<Label text="{i18n>companyContactEmail}" visible="{customerView>/isServiceLayer}" />
+						<Input value="{/SLemail}" visible="{customerView>/isServiceLayer}" />
+						<Label text="{i18n>companyContactFax}" visible="{customerView>/isServiceLayer}" />
+						<Input value="{/SLfax}" visible="{customerView>/isServiceLayer}" />
 					</form:content>
 				</form:SimpleForm>
 				<form:SimpleForm id="AccountingInformation"

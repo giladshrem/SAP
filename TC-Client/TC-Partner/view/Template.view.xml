@@ -2,6 +2,7 @@
 	controllerName="oem-partner.controller.Template"
 	xmlns:mvc="sap.ui.core.mvc"
 	xmlns:m="sap.m"
+	xmlns:layout="sap.ui.layout"
 	xmlns:form="sap.ui.layout.form"
 	xmlns:core="sap.ui.core"
 	xmlns="sap.uxap">
@@ -70,13 +71,12 @@
 												<core:Item key="{PartnerData>Id}" text="{PartnerData>Name}" />
 											</m:Select>
 											<core:Title />
-											<m:Label text="{i18n>ServiceUnitTextLable}" required="true" />
+											<m:Label text="{i18n>ServiceUnitTextLable}" required="true" />											
 											<m:Input
 												showValueHelp="true"
 												valueHelpOnly="true"
 												valueHelpRequest="openServiceUnitsDialog"
-												value="{PartnerData>HostingUnit_Name}" 
-												valueState="{templateView>/serviceUnitVS}" />
+												value="{templateView>/TemplateServiceUnits}" />
 											<m:Label text="{i18n>ExtensionsTextLable}" />
 											<m:MultiInput
 												enabled="{templateView>/extensions}"
@@ -114,19 +114,14 @@
 												<core:Item key="{creationMethod>Code}" text="{creationMethod>Name}" />
 											</m:Select>
 											<m:Label text="{i18n>BackupTextLable}" />
-											<m:Select 
+											<m:Input
 												enabled="{templateView>/backup}"
-												items="{
-													path: 'serviceUnitCombos>/backupPackage',
-													sorter: {
-														path: 'Name'
-													}
-												}"
-												selectedKey="{PartnerData>BackupPackage}" 
-												change="onChangeBackupPackage" 
+												showValueHelp="true"
+												valueHelpOnly="true"
+												valueHelpRequest="openBackupsPackagesDialog"
+												value="{PartnerData>BackupPackageName}" 
 												valueState="{templateView>/backupPackageVS}" >
-												<core:Item key="{serviceUnitCombos>Code}" text="{serviceUnitCombos>Name}" />
-											</m:Select>
+											</m:Input>
 										</form:content>
 									</form:SimpleForm>
 								</blocks>
@@ -159,7 +154,7 @@
 											<m:Select 
 												enabled="{templateView>/localSettings}"
 												items="{
-													path: 'serviceUnitCombos>/localSettings',
+													path: 'PartnerCombos>/localSettings',
 													sorter: {
 														path: 'Name'
 													}
@@ -167,7 +162,7 @@
 												selectedKey="{PartnerData>LocalSettings}" 
 												change="onChangeLocalSettings" 
 												valueState="{templateView>/localSettingsVS}" >
-												<core:Item key="{serviceUnitCombos>Code}" text="{serviceUnitCombos>Name}" />
+												<core:Item key="{PartnerCombos>Code}" text="{PartnerCombos>Name}" />
 											</m:Select>
 											<m:Label text="{i18n>ChartOfAccountTextLable}" />
 											<m:Select 
@@ -187,7 +182,7 @@
 											<m:Select 
 												enabled="{templateView>/systemLanguesge}"
 												items="{
-													path: 'serviceUnitCombos>/systemLanguesge',
+													path: 'PartnerCombos>/systemLanguesge',
 													sorter: {
 														path: 'Name'
 													}
@@ -198,7 +193,7 @@
 												}" 
 												change="onChangeSystemLanguesge" 
 												valueState="{templateView>/systemLanguesgeVS}" >
-												<core:Item key="{serviceUnitCombos>Code}" text="{serviceUnitCombos>Name}" />
+												<core:Item key="{PartnerCombos>Code}" text="{PartnerCombos>Name}" />
 											</m:Select>
 										</form:content>
 									</form:SimpleForm>
@@ -243,8 +238,7 @@
 												enabled="{templateView>/licensePolicy}"
 												text="{i18n>LicensePolicyTextCheckBox}"
 												selected="{PartnerData>IsSameLicense}"
-												select="onSelectLicensePolicy"
-												/>
+												select="onSelectLicensePolicy" />
 											<m:Label text="{i18n>LicenseTypeTextLable}" />
 											<m:MultiInput 
 												enabled="{templateView>/licenseType}"
@@ -290,12 +284,17 @@
 										columnsM="1"
 										singleContainerFullSize="false" >
 										<form:content>
-											<m:Table 
-												noDataText="{i18n>OperatorsNoData}"
-												items="{PartnerData>Templates_Operators}"
-												mode="Delete" 
-												delete="onDeleteOperator"
-												updateFinished="onUpdateFinishedOperator">
+											<m:Text text="{i18n>OperatorsSectionText}" >
+												<m:layoutData>
+													<layout:GridData span="XL12 L12 M12 S12" />
+												</m:layoutData>
+											</m:Text>
+												<m:Table 
+													noDataText="{i18n>OperatorsNoData}"
+													items="{PartnerData>Templates_Operators}"
+													mode="Delete" 
+													delete="onDeleteOperator"
+													updateFinished="onUpdateFinishedOperator">
 												<m:headerToolbar>
 													<m:OverflowToolbar>
 														<m:Title text="{i18n>OperatorsTableTitle}" level="H2" />

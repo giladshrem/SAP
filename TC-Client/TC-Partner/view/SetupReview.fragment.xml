@@ -6,8 +6,30 @@
 		xmlns="sap.m">
 		<Page id="SetupReviewPage" showHeader="false">
 			<content>
+				<form:SimpleForm
+						title="1. {i18n>SldSetupStepTitle}"
+						editable="false"
+						layout="ResponsiveGridLayout">
+					<form:content>
+						<Label text="{i18n>SldURLTextLable}"/>
+						<Text text="{setupData>/sldURL}"/>
+						<Link press="editStepOne" text="{i18n>EditLink}" />
+					</form:content>
+				</form:SimpleForm>
+				<form:SimpleForm
+						title="2. {i18n>SldCrdtStepTitle}"
+						editable="false"
+						layout="ResponsiveGridLayout">
+					<form:content>
+						<Label text="{i18n>UsernameTextLable}"/>
+						<Text text="**********"/>
+						<Label text="{i18n>PasswordTextLable}"/>
+						<Text text="**********"/>
+						<Link press="editStepTwo" text="{i18n>EditLink}" />
+					</form:content>
+				</form:SimpleForm>
                 <form:SimpleForm
-						title="1. {i18n>DbSetupStepTitle}"
+						title="3. {i18n>DbSetupStepTitle}"
 						editable="false"
 						layout="ResponsiveGridLayout">
 					<form:content>
@@ -19,35 +41,19 @@
 						<Text text="{setupData>/user}"/>
 						<Label text="{i18n>DbPasswordTextLable}"/>
 						<Text text="**********"/>
-						<Link press="editStepOne" text="{i18n>EditLink}" />
+						<Link press="editStepThree" text="{i18n>EditLink}" />
 					</form:content>
 				</form:SimpleForm>
 				<form:SimpleForm
-						title="2. {i18n>SLDStepTitle}"
+						title="4. {i18n>ServiceLayerStepTitle}"
 						editable="false"
 						layout="ResponsiveGridLayout">
 					<form:content>
-						<Label text="{i18n>SLDURLTextLable}"/>
-						<Text text="{sldData>/SldUrl}"/>
-						<Label text="{i18n>UsernameTextLable}"/>
-						<Text text="{sldData>/SldUserName}"/>
-						<Label text="{i18n>PasswordTextLable}"/>
-						<Text text="**********"/>
-						<Link press="editStepTwo" text="{i18n>EditLink}" />
-					</form:content>
-				</form:SimpleForm>
-				<form:SimpleForm
-						title="3. {i18n>ServiceLayerStepTitle}"
-						editable="false"
-						layout="ResponsiveGridLayout">
-					<form:content>
-						<Label text="{i18n>ServiceLayerURLTextLable}"/>
-						<Text text="{serviceLayerData>/ServiceLayerUrl}"/>
 						<Label text="{i18n>ServiceLayerUsernameTextLable}"/>
 						<Text text="{serviceLayerData>/ServiceLayerUserName}"/>
 						<Label text="{i18n>ServiceLayerPasswordTextLable}"/>
 						<Text text="**********"/>
-						<Link press="editStepThree" text="{i18n>EditLink}" />
+						<Link press="editStepFour" text="{i18n>EditLink}" />
 					</form:content>
 				</form:SimpleForm>
             </content>

@@ -26,11 +26,13 @@ sap.ui.define([
             this._serviceLayerDataModel = this.getSetModel("serviceLayerData");
             // Model used to manipulate control states
             let oViewModel = new JSONModel({
-                "dbSetupStepValidated" : false,
                 "sldSetupStepValidated" : false,
+                "dbSetupStepValidated" : false,
+                "tokenSetupStepValidated" : false,
                 "ServiceLayerSetupStepValidated" : false,
+                "loginSldUrlButtonVisible" : false,
+                "loginSldCrdtButtonVisible" : false,
                 "ConnectDbButtonVisible" : false,
-                "LoginSldButtonVisible" : false,
                 "LoginServiceLayerButtonVisible" : false
             });
             this._viewModel = this.getSetModel("setupView", oViewModel);
@@ -47,7 +49,7 @@ sap.ui.define([
 
         //#endregion Init
 
-        //#region DB Setup Model
+        //#region Config File Setup Model
 
         getSetupData : function () {
             let methodName = this.getConfModel().getProperty("/server/methodes/getSetupData");
@@ -55,9 +57,12 @@ sap.ui.define([
 			return $.ajax({
                 url: reqURL,
                 type: 'GET',
+                xhrFields: {
+                    withCredentials: true
+                },
 				dataType: 'json'
 			}).then(function(result){
-					this.setSetupData(result);
+					this.handleGetSetupDataSuccess(result);
 				}.bind(this), function(error) {
 					this.handleGetSetupDataErrors(error);
                 }.bind(this));
@@ -76,17 +81,290 @@ sap.ui.define([
             MessageBox.error(msg);
         },
 
+        handleGetSetupDataSuccess : function (data) {
+            if (this.isSamlRequest(data)) {
+                this.handleSsoRequest(data);
+            } else {
+                this.setSetupData(data);
+            }
+        },
+
         setSetupData : function (data) {
             let tempData = {};
+            tempData.sldURL = data.sldURL;
+            tempData.token = data.token;
             tempData.server = data.server;
             tempData.port = data.port;
             tempData.user = data.user;
             tempData.password = "xxxxxx";
             this._setupDataModel.setData(tempData);
-            this.runDbFormValidation();
+            this.runSldUrlFormValidation();
         },
 
-        //#endregion DB Setup Model
+        //#endregion Config File Setup Model
+
+        //#region SLD URL Setup Validations
+
+        validateSldURL : function (oEvent) {
+			let sValue;
+			if (oEvent) {
+				sValue = oEvent.getParameters().value;
+			} else {
+				sValue = this._setupDataModel.getProperty("/sldURL");
+			}
+            if (!sValue) {
+                this._viewModel.setProperty("/sldURLVS", "Error");
+            } else {
+                this._viewModel.setProperty("/sldURLVS", "None");
+            }
+            if (oEvent) {
+                this.sldUrlFormValidation(oEvent);
+            }
+        },
+
+        runSldUrlFormValidation : function () {
+            this.validateSldURL();
+            this.sldUrlFormValidation();
+        },
+
+        sldUrlFormValidation : function (oEvent) {
+            let bValidation = (this._viewModel.getProperty("/sldURLVS") === "None");
+            if (oEvent) {
+                this.setSldUrlButtons(false, bValidation);
+            } else {
+                if (bValidation) {
+                    this.setSldCredentialData();
+                }
+            }
+        },
+
+        setSldUrlButtons : function (NextStep, Login) {
+            this._viewModel.setProperty("/sldSetupStepValidated", NextStep);
+            this._viewModel.setProperty("/loginSldUrlButtonVisible", Login);
+        },
+
+        //#endregion SLD URL Setup Validations
+
+        //#region SLD URL Login
+
+        onSldUrlLogin : function () {
+            this.saveSldUrl({
+                "sldURL": this._setupDataModel.getProperty("/sldURL")
+            });
+        },
+
+        saveSldUrl : function (data) {
+            let methodName = this.getConfModel().getProperty("/server/methodes/saveSldUrl");
+            let reqURL = this._serverURL + methodName;
+			return $.ajax({
+                url: reqURL,
+                type: 'POST',
+                dataType: 'json',
+                contentType: "application/json; charset=utf-8",
+                data: JSON.stringify(data)
+			}).then(function(result){
+                    this.handleSaveSldUrlSuccess(result);
+				}.bind(this), function(error) {
+                    this.handleSaveSldUrlErrors(error);
+                 }.bind(this));
+        },
+        
+        handleSaveSldUrlSuccess : function (data) {
+            if (this.isSamlRequest(data)) {
+                this.handleSsoRequest(data);
+            } else {
+                if (this.isErrorOK(data)) {
+                    let errors = data.errors;
+                    if (errors[0].errCode > 0) {
+                        let errText = this.getErrorTextUser(errors[0].errCode);
+                        if (!errText) {
+                            errText = this._bundle.getText("SendSldLoginError404");
+                        }
+                        MessageBox.error(errText);
+                        return;
+                    }
+                }
+                let msg = this._bundle.getText("SLDStepSuccessMessage");
+                MessageToast.show(msg);
+                this.setSldUrlButtons(true, false);
+            }
+        },
+
+        handleSaveSldUrlErrors : function (result) {
+            this.setSldUrlButtons(false, true);
+            let msg;
+            if (result.status) {
+                switch(result.status) {
+                    case 404:
+                        msg = this._bundle.getText("SendSldLoginError404");
+                        break;
+                    default:
+                        msg = this._bundle.getText("SendSldLoginError404");
+                }
+            } else {
+                msg = this._bundle.getText("GeneralServerError");
+            }
+            MessageBox.error(msg);
+        },
+
+        //#endregion SLD URL Login
+
+        //#region SLD Credential Setup Model
+
+        setSldCredentialData : function (data) {
+            let tokenValue = this._setupDataModel.getProperty("/token");
+            let tempData = {};
+            if (tokenValue) {
+                tempData.SldUserName = "xxxxxx";
+                tempData.SldPassword = "xxxxxx";    
+                this._sldDataModel.setData(tempData);
+                
+            }
+            this.setSldUrlButtons(true, false);
+            this.runSldCredentialFormValidation();
+        },
+        
+        //#endregion SLD Credential Setup Model
+
+        //#region SLD Credential Setup Validations
+
+        validateSldUserName : function (oEvent) {
+			let sValue;
+			if (oEvent) {
+                this._sldDataModel.setProperty("/SldPassword", "");
+                this._viewModel.setProperty("/SldPasswordVS", "Error");
+				sValue = oEvent.getParameters().value;
+			} else {
+				sValue = this._sldDataModel.getProperty("/SldUserName");
+			}
+            if (!sValue) {
+                this._viewModel.setProperty("/SldUserNameVS", "Error");
+            } else {
+                this._viewModel.setProperty("/SldUserNameVS", "None");
+            }
+            if (oEvent) {
+                this.sldCredentialFormValidation(false);
+            }
+        },
+
+        validateSldPassword : function (oEvent) {
+			let sValue;
+			if (oEvent) {
+				sValue = oEvent.getParameters().value;
+			} else {
+				sValue = this._sldDataModel.getProperty("/SldPassword");
+			}
+            if (!sValue) {
+                this._viewModel.setProperty("/SldPasswordVS", "Error");
+            } else {
+                this._viewModel.setProperty("/SldPasswordVS", "None");
+            }
+            if (oEvent) {
+                this.sldCredentialFormValidation(false);
+            }
+        },
+
+        runSldCredentialFormValidation : function () {
+            this.validateSldUserName();
+            this.validateSldPassword();
+            this.sldCredentialFormValidation(true);
+        },
+
+        sldCredentialFormValidation : function (isInnerEvent) {
+            let bValidation = ((this._viewModel.getProperty("/SldUserNameVS") === "None") &&
+                (this._viewModel.getProperty("/SldPasswordVS") === "None"));
+            if (isInnerEvent) {
+                if (this._setupDataModel.getProperty("/token")) {
+                    this.setSldCredentialButtons(true, false);
+                    this.runDbFormValidation();
+                }
+            } else {
+                this.setSldCredentialButtons(false, bValidation);
+            }
+        },
+
+        setSldCredentialButtons : function (NextStep, SldLogin) {
+            this._viewModel.setProperty("/tokenSetupStepValidated", NextStep);
+            this._viewModel.setProperty("/loginSldCrdtButtonVisible", SldLogin);
+        },
+
+        //#endregion SLD Credential Setup Validations
+
+        //#region SLD Credential Login
+
+        onSldCrdtLogin : function () {
+            this.sldCrdtLogin({
+                "SldUserName": this._sldDataModel.getProperty("/SldUserName"),
+                "SldPassword": this._sldDataModel.getProperty("/SldPassword")
+            });
+        },
+
+        sldCrdtLogin : function (data) {
+            let methodName = this.getConfModel().getProperty("/server/methodes/sendSldLogin");
+            let reqURL = this._serverURL + methodName;
+			return $.ajax({
+                url: reqURL,
+                type: 'POST',
+                xhrFields: {
+                    withCredentials: true
+                },
+                crossDomain: true,
+                dataType: 'json',
+                contentType: "application/x-www-form-urlencoded",
+                data: JSON.stringify(data)
+			}).then(function(result){
+                    this.handleSldCrdtLoginSuccess(result);
+				}.bind(this), function(error) {
+                    this.handleSldCrdtLoginErrors(error);
+                 }.bind(this));
+        },
+        
+        handleSldCrdtLoginSuccess : function (data) {
+            if (this.isSamlRequest(data)) {
+                this.handleSsoRequest(data);
+            } else {
+                if (this.isErrorOK(data)) {
+                    let errors = data.errors;
+                    if (errors[0].errCode > 0) {
+                        let errText = this.getErrorTextUser(errors[0].errCode);
+                        if (!errText) {
+                            errText = this._bundle.getText("SendSldLoginError404");
+                        }
+                        MessageBox.error(errText);
+                        return;
+                    }
+                }
+                if (this.isKeyOK(data, 'result', 'object')) {
+                    if (data.result.setToken) {
+                        let msg = this._bundle.getText("SLDStepSuccessMessage");
+                        MessageToast.show(msg);
+                        this.setSldCredentialButtons(true, false);
+                    } else {
+                        let errText = this._bundle.getText("SldCrdtError");
+                        MessageBox.error(errText);
+                    }
+                }
+            }
+        },
+
+        handleSldCrdtLoginErrors : function (result) {
+            this.setSldCredentialButtons(false, true);
+            let msg;
+            if (result.status) {
+                switch(result.status) {
+                    case 404:
+                        msg = this._bundle.getText("SendSldLoginError404");
+                        break;
+                    default:
+                        msg = this._bundle.getText("SendSldLoginError404");
+                }
+            } else {
+                msg = this._bundle.getText("GeneralServerError");
+            }
+            MessageBox.error(msg);
+        },
+
+        //#endregion SLD Credential Login
 
         //#region Save DB Setup Data
 
@@ -97,12 +375,15 @@ sap.ui.define([
         saveSetupData : function (data) {
             let methodName = this.getConfModel().getProperty("/server/methodes/saveSetupData");
             let reqURL = this._serverURL + methodName;
-            jQuery.sap.log.debug(JSON.stringify(data));
 			return $.ajax({
                 url: reqURL,
                 type: 'POST',
+                xhrFields: {
+                    withCredentials: true
+                },
+                crossDomain: true,
                 dataType: 'json',
-                contentType: "application/json; charset=utf-8",
+                contentType: "application/x-www-form-urlencoded",
                 data: JSON.stringify(data)
 			}).then(function(result){
                     this.handleSaveSetupSuccess(result);
@@ -127,7 +408,15 @@ sap.ui.define([
             MessageBox.error(msg);
         },
 
-        handleSaveSetupSuccess : function (result) {
+        handleSaveSetupSuccess : function (data) {
+            if (this.isSamlRequest(data)) {
+                this.handleSsoRequest(data);
+            } else {
+                this.setDbData(data);
+            }
+        },
+
+        setDbData : function (result) {
             if ((this.isKeyOK(result, 'errors', 'object')) && (result.errors.length > 0) && (this.isKeyOK(result.errors[0], 'errCode', 'number'))) {
                 let errText = this.getErrorText(result.errors[0].errCode);
                 MessageBox.error(errText);
@@ -142,6 +431,10 @@ sap.ui.define([
 
         //#region DB Setup Validations
 
+        onActivateDbSetupStep : function() {
+            this.runDbFormValidation();
+        },
+        
         validateDbServer : function (oEvent) {
 			let sValue;
 			if (oEvent) {
@@ -233,7 +526,8 @@ sap.ui.define([
                 this.setDbButtons(false, bValidation);
             } else {
                 if (bValidation) {
-                    this.getSldData();
+                    this.getServiceLayerData();
+                    this.getPartnerCombos();
                 }
             }
         },
@@ -244,187 +538,7 @@ sap.ui.define([
         },
 
         //#endregion DB Setup Validations
-
-        //#region SLD Setup Model
-
-		getSldData : function () {
-            let methodName = this.getConfModel().getProperty("/server/methodes/getSldData");
-			let reqURL = this.getServerURL() + methodName;
-			return $.ajax({
-                url: reqURL,
-                type: 'GET',
-				dataType: 'json'
-			}).then(function(result){
-					this.setSldData(result);
-				}.bind(this), function(error) {
-					this.handleGetSldDataErrors(error);
-                }.bind(this));
-		},
-
-        setSldData : function (data) {
-            let tempData = {};
-            tempData.SldUrl = "";
-            tempData.SldUserName = "";
-            tempData.SldPassword = "xxxxxx";
-            if (this.isKeyOK(data, 'slddata', 'object')) {
-                tempData.SldUrl = data.slddata.SldUrl;
-                tempData.SldUserName = data.slddata.SldUserName;
-            }
-            this._sldDataModel.setData(tempData);
-            this.runSldFormValidation();
-            this.setDbButtons(true, false);
-        },
-
-        handleGetSldDataErrors : function (result) {
-            this.setDbButtons(false, true);
-            let msg;
-            if (result.status) {
-                switch(result.status) {
-                    case 503:
-                        msg = this._bundle.getText("ServerError503");
-                        break;
-                    default:
-                        msg = this._bundle.getText("ServerError503");
-                }
-            } else {
-                msg = this._bundle.getText("GeneralServerError");
-            }
-            MessageBox.error(msg);
-        },
         
-        //#endregion SLD Setup Model
-
-        //#region SLD Setup Validations
-
-        validateSldUrl : function (oEvent) {
-			let sValue;
-			if (oEvent) {
-                this._sldDataModel.setProperty("/SldPassword", "");
-                this._viewModel.setProperty("/SldPasswordVS", "Error");
-				sValue = oEvent.getParameters().value;
-			} else {
-				sValue = this._sldDataModel.getProperty("/SldUrl");
-			}
-            if (!sValue) {
-                this._viewModel.setProperty("/SldUrlVS", "Error");
-            } else {
-                this._viewModel.setProperty("/SldUrlVS", "None");
-            }
-            if (oEvent) {
-                this.sldFormValidation(false);
-            }
-        },
-
-        validateSldUserName : function (oEvent) {
-			let sValue;
-			if (oEvent) {
-                this._sldDataModel.setProperty("/SldPassword", "");
-                this._viewModel.setProperty("/SldPasswordVS", "Error");
-				sValue = oEvent.getParameters().value;
-			} else {
-				sValue = this._sldDataModel.getProperty("/SldUserName");
-			}
-            if (!sValue) {
-                this._viewModel.setProperty("/SldUserNameVS", "Error");
-            } else {
-                this._viewModel.setProperty("/SldUserNameVS", "None");
-            }
-            if (oEvent) {
-                this.sldFormValidation(false);
-            }
-        },
-
-        validateSldPassword : function (oEvent) {
-			let sValue;
-			if (oEvent) {
-				sValue = oEvent.getParameters().value;
-			} else {
-				sValue = this._sldDataModel.getProperty("/SldPassword");
-			}
-            if (!sValue) {
-                this._viewModel.setProperty("/SldPasswordVS", "Error");
-            } else {
-                this._viewModel.setProperty("/SldPasswordVS", "None");
-            }
-            if (oEvent) {
-                this.sldFormValidation(false);
-            }
-        },
-
-        runSldFormValidation : function () {
-            this.validateSldUrl();
-            this.validateSldUserName();
-            this.validateSldPassword();
-            this.sldFormValidation(true);
-        },
-
-        sldFormValidation : function (isInnerEvent) {
-            let bValidation = ((this._viewModel.getProperty("/SldUrlVS") === "None") &&
-                (this._viewModel.getProperty("/SldUserNameVS") === "None") &&
-                (this._viewModel.getProperty("/SldPasswordVS") === "None"));
-            if (isInnerEvent) {
-                if (bValidation) {
-                    this.getPartnerCombos();
-                }
-            } else {
-                this.setSldButtons(false, bValidation);
-            }
-        },
-
-        setSldButtons : function (NextStep, SldLogin) {
-            this._viewModel.setProperty("/sldSetupStepValidated", NextStep);
-            this._viewModel.setProperty("/LoginSldButtonVisible", SldLogin);
-        },
-
-        //#endregion SLD Setup Validations
-
-        //#region SLD Login
-
-        onSldLogin : function () {
-            this.checkSldLogin(this._sldDataModel.oData);
-        },
-
-        checkSldLogin : function (data) {
-            let methodName = this.getConfModel().getProperty("/server/methodes/sendSldLogin");
-            let reqURL = this._serverURL + methodName;
-			return $.ajax({
-                url: reqURL,
-                type: 'POST',
-                dataType: 'json',
-                contentType: "application/json; charset=utf-8",
-                data: JSON.stringify(data)
-			}).then(function(result){
-                    this.handleSldLoginSuccess(result);
-				}.bind(this), function(error) {
-                    this.handleSldLoginErrors(error);
-                 }.bind(this));
-        },
-        
-        handleSldLoginSuccess : function (result) {
-            let msg = this._bundle.getText("SLDStepSuccessMessage");
-            MessageToast.show(msg);
-            this.setSldButtons(true, false);
-        },
-
-        handleSldLoginErrors : function (result) {
-            this.setSldButtons(false, true);
-            let msg;
-            if (result.status) {
-                switch(result.status) {
-                    case 404:
-                        msg = this._bundle.getText("SendSldLoginError404");
-                        break;
-                    default:
-                        msg = this._bundle.getText("SendSldLoginError404");
-                }
-            } else {
-                msg = this._bundle.getText("GeneralServerError");
-            }
-            MessageBox.error(msg);
-        },
-
-        //#endregion SLD Login
-
         //#region Get Partner Combos
 
         getPartnerCombos : function () {
@@ -433,6 +547,9 @@ sap.ui.define([
             return $.ajax({
                 url: reqURL,
                 type: 'GET',
+                xhrFields: {
+                    withCredentials: true
+                },
                 dataType: 'json'
             }).then(function(result){
                     this.handleGetPartnerCombosSuccess(result);
@@ -442,30 +559,20 @@ sap.ui.define([
         },
         
         handleGetPartnerCombosSuccess : function (data) {
-            this.setSldButtons(true, false);
+            if (this.isSamlRequest(data)) {
+                this.handleSsoRequest(data);
+            } else {
+                this.setServiceLayerUsernames(data);
+            }
         },
 
         handleGetPartnerCombosErrors : function (result) {
-            this.setSldButtons(false, true);
-            let msg;
-            if (result.status) {
-                switch(result.status) {
-                    default:
-                        msg = this._bundle.getText("SendSldLoginError404");
-                }
-            } else {
-                msg = this._bundle.getText("GeneralServerError");
-            }
-            MessageBox.error(msg);
+            
         },
 
         //#endregion Get Partner Combos
 
         //#region Service Layer Setup Model
-
-        onActivateServiceLayerStep : function () {
-            this.getServiceLayerData();
-        },
 
 		getServiceLayerData : function () {
             let methodName = this.getConfModel().getProperty("/server/methodes/getServiceLayerData");
@@ -473,6 +580,9 @@ sap.ui.define([
 			return $.ajax({
                 url: reqURL,
                 type: 'GET',
+                xhrFields: {
+                    withCredentials: true
+                },
 				dataType: 'json'
 			}).then(function(result){
 					this.handleGetServiceLayerDataSuccess(result);
@@ -482,88 +592,94 @@ sap.ui.define([
         },
         
         handleGetServiceLayerDataSuccess : function (data) {
+            if (this.isSamlRequest(data)) {
+                this.handleSsoRequest(data);
+            } else {
+                this.setServiceLayerData(data);
+            }
+        },
+
+        setServiceLayerData : function (data) {
             if (this.isKeyOK(data, 'result', 'object')) {
-                if (data.result[0].SLURL) {
+                this.setDbButtons(true, false);
+                if (data.result[0].SLUserName) {
                     let tempData = {};
-                    tempData.ServiceLayerUrl = data.result[0].SLURL;
                     tempData.ServiceLayerUserName = data.result[0].SLUserName;
                     tempData.ServiceLayerPassword = "xxxxxx";
-                    this._viewModel.setProperty("/ServiceLayerButtonText", this._bundle.getText("TestURLButton"));
                     this._viewModel.setProperty("/IsServiceLayer", true);
                     this._serviceLayerDataModel.setData(tempData);
-                    this.runServiceLayerFormValidation();
+                    this.runServiceLayerFormValidation("AfterGet");
                 } else {
-                    this.toggleServiceLayerDisable(false);
+                    this.toggleServiceLayerDisable(false, "AfterGet");
                     this.setServiceLayerButtons(true, false);
                 }
+            } else {
+                this.setDbButtons(false, true);
             }
         },
 
         handleGetServiceLayerDataErrors : function (result) {
+            this.setDbButtons(false, true);
             let msg = this._bundle.getText("GeneralServerError");
             MessageBox.error(msg);
+        },
+
+        setServiceLayerUsernames : function (data) {
+            if (this.isKeyOK(data, 'operators', 'object')) {
+                let aServiceLayerUsernames = [];
+                aServiceLayerUsernames.push({"Code" : "", "Name" : ""});
+                for(let i = 0; i < data.operators.d.results.length; i++) {
+                    aServiceLayerUsernames.push({
+                        "Code" : data.operators.d.results[i].SystemUsername, 
+                        "Name" : data.operators.d.results[i].SystemUsername
+                    });
+                }
+                this._viewModel.setProperty("/ServiceLayerUsernames", aServiceLayerUsernames);
+            } else {
+
+            }
         },
 
         //#endregion Service Layer Setup Model
 
         //#region Service Layer Setup Validations
 
-        onSelectIsServiceLayer : function(oEvent) {
-            this.toggleServiceLayerDisable(this._viewModel.getProperty("/IsServiceLayer"));
+        onActivateServiceLayerStep : function() {
+            this.setServiceLayerButtons(true, false);
         },
 
-        toggleServiceLayerDisable : function (isServiceLayer) {
+        onSelectIsServiceLayer : function(oEvent) {
+            this.toggleServiceLayerDisable(this._viewModel.getProperty("/IsServiceLayer"), "AfterClick");
+        },
+
+        toggleServiceLayerDisable : function (isServiceLayer, sAction) {
             this._viewModel.setProperty("/IsServiceLayer", isServiceLayer);
-            this._serviceLayerDataModel.setProperty("/ServiceLayerUrl", "");
-            this._viewModel.setProperty("/ServiceLayerUrlVS", "None");
             this._serviceLayerDataModel.setProperty("/ServiceLayerUserName", "");
             this._viewModel.setProperty("/ServiceLayerUserNameVS", "None");
             this._serviceLayerDataModel.setProperty("/ServiceLayerPassword", "");
             this._viewModel.setProperty("/ServiceLayerPasswordVS", "None");
             if (isServiceLayer) {
-                this._viewModel.setProperty("/ServiceLayerButtonText", this._bundle.getText("TestURLButton"));
-                this.runServiceLayerFormValidation();
+                this.runServiceLayerFormValidation(sAction);
             } else {
-                this._viewModel.setProperty("/ServiceLayerButtonText", this._bundle.getText("SaveButton"));
                 this.setServiceLayerButtons(false, true);
             }
         },
 
-        validateServiceLayerUrl : function (oEvent) {
-			let sValue;
-			if (oEvent) {
-                this._serviceLayerDataModel.setProperty("/ServiceLayerPassword", "");
-                this._viewModel.setProperty("/ServiceLayerPasswordVS", "Error");
-				sValue = oEvent.getParameters().value;
-			} else {
-				sValue = this._serviceLayerDataModel.getProperty("/ServiceLayerUrl");
-			}
-            if (!sValue) {
-                this._viewModel.setProperty("/ServiceLayerUrlVS", "Error");
-            } else {
-                this._viewModel.setProperty("/ServiceLayerUrlVS", "None");
-            }
-            if (oEvent) {
-                this.serviceLayerFormValidation(false);
-            }
-        },
-
         validateServiceLayerUserName : function (oEvent) {
-			let sValue;
 			if (oEvent) {
                 this._serviceLayerDataModel.setProperty("/ServiceLayerPassword", "");
                 this._viewModel.setProperty("/ServiceLayerPasswordVS", "Error");
-				sValue = oEvent.getParameters().value;
-			} else {
-				sValue = this._serviceLayerDataModel.getProperty("/ServiceLayerUserName");
-			}
+            }
+            
+			let sValue = this._serviceLayerDataModel.getProperty("/ServiceLayerUserName");
+
             if (!sValue) {
                 this._viewModel.setProperty("/ServiceLayerUserNameVS", "Error");
             } else {
                 this._viewModel.setProperty("/ServiceLayerUserNameVS", "None");
             }
             if (oEvent) {
-                this.serviceLayerFormValidation(false);
+                this.serviceLayerFormValidation("AfterClick");
             }
         },
 
@@ -580,25 +696,28 @@ sap.ui.define([
                 this._viewModel.setProperty("/ServiceLayerPasswordVS", "None");
             }
             if (oEvent) {
-                this.serviceLayerFormValidation(false);
+                this.serviceLayerFormValidation("AfterClick");
             }
         },
 
-        runServiceLayerFormValidation : function () {
-            this.validateServiceLayerUrl();
+        runServiceLayerFormValidation : function (sAction) {
             this.validateServiceLayerUserName();
             this.validateServiceLayerPassword();
-            this.serviceLayerFormValidation(true);
+            this.serviceLayerFormValidation(sAction);
         },
 
-        serviceLayerFormValidation : function (isInnerEvent) {
-            let bValidation = ((this._viewModel.getProperty("/ServiceLayerUrlVS") === "None") &&
-                (this._viewModel.getProperty("/ServiceLayerUserNameVS") === "None") &&
+        serviceLayerFormValidation : function (sAction) {
+            let bValidation = ((this._viewModel.getProperty("/ServiceLayerUserNameVS") === "None") &&
                 (this._viewModel.getProperty("/ServiceLayerPasswordVS") === "None"));
-            if (isInnerEvent) {
-                this.setServiceLayerButtons(bValidation, bValidation);
-            } else {
-                this.setServiceLayerButtons(false, bValidation);
+            switch(sAction) {
+                case "AfterClick":
+                    this.setServiceLayerButtons(false, bValidation);
+                break;
+                case "AfterGet":
+                    this.setServiceLayerButtons(bValidation, false);
+                break;
+                default:
+                this.setServiceLayerButtons(false, false);
             }
         },
 
@@ -614,7 +733,6 @@ sap.ui.define([
         onServiceLayerLogin : function () {
             let serviceLayerData = this._serviceLayerDataModel.getProperty("/");
             this.checkServiceLayerLogin({
-                "SLUrl": serviceLayerData.ServiceLayerUrl,
                 "SLUserName": serviceLayerData.ServiceLayerUserName,
                 "SLPassword": serviceLayerData.ServiceLayerPassword
             });
@@ -626,8 +744,12 @@ sap.ui.define([
 			return $.ajax({
                 url: reqURL,
                 type: 'POST',
+                xhrFields: {
+                    withCredentials: true
+                },
+                crossDomain: true,
                 dataType: 'json',
-                contentType: "application/json; charset=utf-8",
+                contentType: "application/x-www-form-urlencoded",
                 data: JSON.stringify(data)
 			}).then(function(result){
                     this.handleServiceLayerLoginSuccess(result);
@@ -636,32 +758,34 @@ sap.ui.define([
                  }.bind(this));
         },
         
-        handleServiceLayerLoginSuccess : function (result) {
-            if (!this._serviceLayerDataModel.getProperty("/ServiceLayerUrl"))
-            {//When saving empty Service Layer Url the error code is not relevant.
-                this.setServiceLayerButtons(true, false);
-                return;
+        handleServiceLayerLoginSuccess : function (data) {
+            if (this.isSamlRequest(data)) {
+                this.handleSsoRequest(data);
+            } else {
+                this.setServiceLayerLoginData(data);
             }
+        },
+
+        setServiceLayerLoginData : function (result) {
             let errors;
             if (this.isErrorOK(result)) {
                 errors = result.errors;
             }
             if (errors[0].errCode > 0) {
-                this._viewModel.setProperty("/ServiceLayerUrlVS", "Error");
                 MessageBox.error(this._bundle.getText("ServiceLayerStepErrorMessage"));
                 return;
             }
-            let isURLok = false;
+            let isSaved = false;
             if (this.isKeyOK(result, 'result', 'object')) {
-                isURLok = result.result.isURLok;
-                if (isURLok) {
+                isSaved = result.result.isSaved;
+                if (isSaved) {
                     MessageToast.show(this._bundle.getText("ServiceLayerStepSuccessMessage"));
                     this.setServiceLayerButtons(true, false);
                     return;
                 }
             }
             MessageBox.error(this._bundle.getText("ServiceLayerStepErrorMessage"));
-            this.setServiceLayerButtons(true, false);
+            this.setServiceLayerButtons(false, true);
         },
 
         handleServiceLayerLoginErrors : function (result) {
@@ -702,6 +826,10 @@ sap.ui.define([
 			this._handleNavigationToStep(2);
         },
 
+        editStepFour : function () {
+			this._handleNavigationToStep(3);
+        },
+
 		_handleNavigationToStep : function (iStepNumber) {
 			let fnAfterNavigate = function () {
 				this._wizard.goToStep(this._wizard.getSteps()[iStepNumber]);
@@ -710,8 +838,12 @@ sap.ui.define([
 
 			this._oNavContainer.attachAfterNavigate(fnAfterNavigate);
 			this.backToWizardContent();
-		}
+		},
         
+        onCancel : function(oEvent) {
+            location.reload();
+            return;
+        }
         //#endregion Review Wizard
 
     });

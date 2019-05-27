@@ -73,9 +73,9 @@ sap.ui.define([
 
 		setActivePage : function() {
 			if (this._partnerView.getProperty("/pageStatus") === "load") {
-				var emailServerType = this._PartnerDataModel.getProperty("/Cloud_Setting/0/EmailServerTypeName");
+				let emailServerType = this._PartnerDataModel.getProperty("/Cloud_Setting/0/EmailServerTypeName");
 				if (emailServerType) {
-					for(var i = 1; i < this._wizard.getSteps().length; i++) {
+					for(let i = 1; i < this._wizard.getSteps().length; i++) {
 						this._wizard.nextStep();
 					}
 					this._wizard.fireComplete();
@@ -97,10 +97,13 @@ sap.ui.define([
             let reqURL =  serverURL + methodName;
             return $.ajax({
                 url: reqURL,
-                type: 'GET',
+				type: 'GET',
+				xhrFields: {
+                    withCredentials: true
+                },
                 dataType: 'json',
             }).then(function(result){
-					this.setPartnerCombos(result);
+					this.handleGetPartnerCombosSuccess(result);
                 }.bind(this), function(error) {
 					this.handleGetPartnerCombosErrors(error);
                 }.bind(this));
@@ -126,6 +129,14 @@ sap.ui.define([
             MessageBox.error(msg);
 		},
 		
+		handleGetPartnerCombosSuccess : function (data) {
+			if (this.isSamlRequest(data)) {
+                this.handleSsoRequest(data);
+            } else {
+                this.setPartnerCombos(data);
+            }
+		},
+
 		setPartnerCombos : function (data) {
 			var a = {};
 			for(var i = 0; i < data.licensefiles.d.results.length; i++) {
@@ -168,13 +179,24 @@ sap.ui.define([
 			let reqURL = this.getServerURL() + methodName;
 			return $.ajax({
                 url: reqURL,
-                type: 'GET',
+				type: 'GET',
+				xhrFields: {
+                    withCredentials: true
+                },
 				dataType: 'json'
 			}).then(function(result){
-					this.setPartnerData(result);
+					this.handleGetPartnerDataSuccess(result);
 				}.bind(this), function(error) {
 					this.handleGetPartnerDataErrors(error);
                 }.bind(this));
+		},
+
+		handleGetPartnerDataSuccess : function (data) {
+			if (this.isSamlRequest(data)) {
+                this.handleSsoRequest(data);
+            } else {
+                this.setPartnerData(data);
+            }
 		},
 
 		setPartnerData : function (data) {
@@ -187,7 +209,8 @@ sap.ui.define([
 			}
 
 			let aCountries = this._countriesDataModel.getProperty("/Countries");
-
+			data.localSettings = [];
+			data.systemLanguesge = [];
 			for(let i = 0; i < data.Templates.length; i++) {
 
 				let SU_Id = data.Templates[i].HostingUnit_Id;
@@ -198,6 +221,7 @@ sap.ui.define([
 				}
 
 				data.Templates[i].Templates_Extenstions = [];
+				data.Templates[i].Templates_ServiceUnits = [];
 				if (data.Templates[i].IsTrusted) {
 					data.Templates[i].Authentication = "win";
 				} else {
@@ -226,7 +250,15 @@ sap.ui.define([
 					}
 				}
 			}
-
+			if (this.isKeyOK(data, 'Templates_ServiceUnits', 'object')) {
+				for(let i = 0; i < data.Templates_ServiceUnits.length; i++) {
+					let TId = data.Templates_ServiceUnits[i].TemplateId;
+					let index = data.Templates.findIndex(x => x.id==TId);
+					if (index >= 0)	{
+						data.Templates[index].Templates_ServiceUnits.push(data.Templates_ServiceUnits[i]);
+					}
+				}
+			}
 			for(let i = 0; i < data.Templates_Extenstions.length; i++) {
 				let TId = data.Templates_Extenstions[i].TemplateId;
 				let index = data.Templates.findIndex(x => x.id==TId);
@@ -722,19 +754,21 @@ sap.ui.define([
 		},
 
 		handlePartnerDataSave : function() {
-			var saveData = {};
-			saveData.CloudConfiguration = this._PartnerDataModel.oData.Cloud_Setting;
+			let saveData = {};
+			saveData.CloudConfiguration = this._PartnerDataModel.getProperty("/Cloud_Setting");
 			saveData.CloudConfiguration[0].SldVersion = this._PartnerCombosModel.getProperty("/sldVersion/d/results/0/Value");
-			saveData.IndPackages = this._PartnerDataModel.oData.Packages;
+			saveData.IndPackages = this._PartnerDataModel.getProperty("/Packages");
 			saveData.Templates = [];
+			saveData.TemplatesServiceUnits = [];
 			saveData.TemplatesExtensions = [];
 			saveData.TemplatesLicenses = [];
 			saveData.TemplatesOperators = [];
 			saveData.OperatorsLicenses = [];
-			if (!this._PartnerDataModel.oData.Templates)
+			let aTemplates = this._PartnerDataModel.getProperty("/Templates");
+			if (!aTemplates)
 				return;
-			for(var i = 0; i < this._PartnerDataModel.oData.Templates.length; i++) {
-				saveData.Templates.push(JSON.parse(JSON.stringify(this._PartnerDataModel.oData.Templates[i])));
+			for(let i = 0; i < aTemplates.length; i++) {
+				saveData.Templates.push(JSON.parse(JSON.stringify(aTemplates[i])));
 				if (!saveData.Templates[i].IndPackageId) {
 					saveData.Templates[i].IndPackageId = 0;
 				}
@@ -751,26 +785,32 @@ sap.ui.define([
 				if (saveData.Templates[i].SystemLanguage == -1){
 					saveData.Templates[i].SystemLanguage = null;
 				}
+				if (saveData.Templates[i].Templates_ServiceUnits) {
+					for(var j = 0; j < aTemplates[i].Templates_ServiceUnits.length; j++) {
+						saveData.TemplatesServiceUnits.push(JSON.parse(JSON.stringify(aTemplates[i].Templates_ServiceUnits[j])));
+					}
+					delete saveData.Templates[i].Templates_ServiceUnits;
+				}
 				if (saveData.Templates[i].Templates_Extenstions) {
-					for(var j = 0; j < this._PartnerDataModel.oData.Templates[i].Templates_Extenstions.length; j++) {
-						saveData.TemplatesExtensions.push(JSON.parse(JSON.stringify(this._PartnerDataModel.oData.Templates[i].Templates_Extenstions[j])));
+					for(var j = 0; j < aTemplates[i].Templates_Extenstions.length; j++) {
+						saveData.TemplatesExtensions.push(JSON.parse(JSON.stringify(aTemplates[i].Templates_Extenstions[j])));
 					}
 					delete saveData.Templates[i].Templates_Extenstions;
 				}
 				if (saveData.Templates[i].Templates_Licenses) {
-					for(var j = 0; j < this._PartnerDataModel.oData.Templates[i].Templates_Licenses.length; j++) {
-						saveData.TemplatesLicenses.push(JSON.parse(JSON.stringify(this._PartnerDataModel.oData.Templates[i].Templates_Licenses[j])));
+					for(var j = 0; j < aTemplates[i].Templates_Licenses.length; j++) {
+						saveData.TemplatesLicenses.push(JSON.parse(JSON.stringify(aTemplates[i].Templates_Licenses[j])));
 					}
 					delete saveData.Templates[i].Templates_Licenses;
 				}
 				if (saveData.Templates[i].Templates_Operators) {
-					for(var j = 0; j < this._PartnerDataModel.oData.Templates[i].Templates_Operators.length; j++) {
-						var temp = JSON.parse(JSON.stringify(this._PartnerDataModel.oData.Templates[i].Templates_Operators[j]));
+					for(var j = 0; j < aTemplates[i].Templates_Operators.length; j++) {
+						var temp = JSON.parse(JSON.stringify(aTemplates[i].Templates_Operators[j]));
 						delete temp.Operators_licenses;
 						saveData.TemplatesOperators.push(JSON.parse(JSON.stringify(temp)));
 						if (saveData.Templates[i].Templates_Operators[j].Operators_licenses) {
-							for(var k = 0; k < this._PartnerDataModel.oData.Templates[i].Templates_Operators[j].Operators_licenses.length; k++) {
-								saveData.OperatorsLicenses.push(JSON.parse(JSON.stringify(this._PartnerDataModel.oData.Templates[i].Templates_Operators[j].Operators_licenses[k])));
+							for(var k = 0; k < aTemplates[i].Templates_Operators[j].Operators_licenses.length; k++) {
+								saveData.OperatorsLicenses.push(JSON.parse(JSON.stringify(aTemplates[i].Templates_Operators[j].Operators_licenses[k])));
 							}
 							
 							delete saveData.Templates[i].Templates_Operators[j].Operators_licenses;
@@ -789,8 +829,12 @@ sap.ui.define([
             $.ajax({
                 url: reqURL,
                 type: 'POST',
-				dataType: 'json',
-				contentType: "application/json; charset=utf-8",
+                xhrFields: {
+                    withCredentials: true
+                },
+                crossDomain: true,
+                dataType: 'json',
+                contentType: "application/x-www-form-urlencoded",
                 data: JSON.stringify(data),
                 success: function(result){
 					this.handleSendPartnerDataSuccess(result);
@@ -801,7 +845,15 @@ sap.ui.define([
               });
 		},
 
-		handleSendPartnerDataSuccess : function (result) {
+		handleSendPartnerDataSuccess : function (data) {
+			if (this.isSamlRequest(data)) {
+                this.handleSsoRequest(data);
+            } else {
+                this.setSendPartnerData(data);
+            }
+		},
+
+		setSendPartnerData : function (result) {
 			let msg = this._bundle.getText("saveSuccess");
 			MessageToast.show(msg);
 			this._partnerView.setProperty("/saveButtonEnabled", false);
@@ -819,8 +871,12 @@ sap.ui.define([
             $.ajax({
                 url: reqURL,
                 type: 'POST',
-				dataType: 'json',
-				contentType: "application/json; charset=utf-8",
+                xhrFields: {
+                    withCredentials: true
+                },
+                crossDomain: true,
+                dataType: 'json',
+                contentType: "application/x-www-form-urlencoded",
                 data: JSON.stringify(data),
                 success: function(result){
 					this.handleSendEmailPasswordSuccess(result);
@@ -831,8 +887,12 @@ sap.ui.define([
               });
 		},
 
-		handleSendEmailPasswordSuccess : function (result) {
-			this.handlePartnerDataSave();
+		handleSendEmailPasswordSuccess : function (data) {
+			if (this.isSamlRequest(data)) {
+                this.handleSsoRequest(data);
+            } else {
+                this.handlePartnerDataSave(data);
+            }
 		},
 
 		handleSendEmailPasswordErrors : function (result) {

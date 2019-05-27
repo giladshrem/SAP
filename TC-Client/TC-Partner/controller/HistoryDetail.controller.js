@@ -27,6 +27,7 @@ sap.ui.define([
 			this._creationMethodModel = this.getModel("creationMethod");
 			this._popoverData = this.getSetModel("popoverData");
 			this._popoverContactData = this.getSetModel("popoverContactData");
+			this._popoverCompanyContactData = this.getSetModel("popoverCompanyContactData");
 		},
 
 		//#endregion Init
@@ -51,7 +52,10 @@ sap.ui.define([
             let reqURL = this.getServerURL() + methodName + "/" + SelectedCustomerId;
             return $.ajax({
                 url: reqURL,
-                type: 'GET',
+				type: 'GET',
+				xhrFields: {
+                    withCredentials: true
+                },
                 dataType: 'json'
             }).then(function(result){
                 this.handleGetCustomerDataSuccess(result);
@@ -60,7 +64,15 @@ sap.ui.define([
             }.bind(this));
         },
 
-		handleGetCustomerDataSuccess : function (result) {
+		handleGetCustomerDataSuccess : function (data) {
+            if (this.isSamlRequest(data)) {
+                this.handleSsoRequest(data);
+            } else {
+                this.setCustomerData(data);
+            }
+		},
+
+		setCustomerData : function (result) {
 			let tempData = {};
 			tempData = result;
 
@@ -370,9 +382,50 @@ sap.ui.define([
 
 		handleClosePopoverContact : function (oEvent) {
 			this._oPopoverContact.close();
-		}
+		},
 
 		//#endregion PopoverContact
+
+		//#region Popover Company Contact
+
+		handlePopoverCompanyContactPress: function (oEvent) {
+			if (!this._oPopoverCompanyContact) {
+				this._oPopoverCompanyContact = sap.ui.xmlfragment("oem-partner.view.PopoverCompanyContact", this);
+				this.getView().addDependent(this._oPopoverCompanyContact);
+			}
+
+			this.setPopoverCompanyContactData(oEvent);
+			if (this._popoverCompanyContactData) {
+				this._oPopoverCompanyContact.openBy(oEvent.getSource());
+			}
+		},
+
+		setPopoverCompanyContactData : function (oEvent) {
+			let path = "/CustomerDtl/0";
+			let title = this._bundle.getText("CompanyContactPopoverTitle");
+			let placement = "Right";
+			let address = this._customerDataModel.getProperty(path + "/SLaddress");
+			let phone1 = this._customerDataModel.getProperty(path + "/SLphone1");
+			let phone2 = this._customerDataModel.getProperty(path + "/SLphone2");
+			let email = this._customerDataModel.getProperty(path + "/SLemail");
+			let fax = this._customerDataModel.getProperty(path + "/SLfax");
+			let oPopoverData = {
+				Title : title,
+				Placement : placement,
+				Address : address,
+				Phone1 : phone1,
+				Phone2 : phone2,
+				Email : email,
+				Fax : fax
+			};
+			this._popoverCompanyContactData.setData(oPopoverData);
+		},
+
+		handleClosePopoverCompanyContact : function (oEvent) {
+			this._oPopoverCompanyContact.close();
+		},
+
+		//#endregion Popover Company Contact
 
     });
 });

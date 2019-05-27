@@ -105,9 +105,6 @@
 												<Text text="{i18n>IndustryPackageColumnName}" />
 											</Column>
 											<Column>
-												<Text text="{i18n>ServiceUnitColumnName}" />
-											</Column>
-											<Column>
 												<Text text="{i18n>CreationMethodColumnName}" />
 											</Column>
 											<Column>
@@ -121,7 +118,6 @@
 												<Text text="{PartnerData>Name}" />
 												<Text text="{PartnerData>Country_Name}" />
 												<Text text="{PartnerData>IndPackageName}" />
-												<Text text="{PartnerData>HostingUnit_Name}" />
 												<Text text="{PartnerData>CreationMethod}" />
 												<Text 
 													text="{PartnerData>BackupPackage}" 
@@ -147,18 +143,18 @@
 							<form:SimpleForm
 								editable="true"
 								layout="ResponsiveGridLayout"
-								labelSpanXL="2"
-								labelSpanL="2"
-								labelSpanM="2"
-								labelSpanS="2"
+								labelSpanXL="3"
+								labelSpanL="3"
+								labelSpanM="3"
+								labelSpanS="3"
 								adjustLabelSpan="false"
-								emptySpanXL="7"
-								emptySpanL="7"
-								emptySpanM="7"
-								emptySpanS="7"
-								columnsXL="1"
-								columnsL="1"
-								columnsM="1"
+								emptySpanXL="4"
+								emptySpanL="4"
+								emptySpanM="4"
+								emptySpanS="4"
+								columnsXL="2"
+								columnsL="2"
+								columnsM="2"
 								singleContainerFullSize="false">
 								<form:content>
 									<CheckBox 
@@ -183,7 +179,7 @@
 									</Select>
 									<Text text="{i18n>UserPrefixTextAfterLable}">
 										<layoutData>
-											<layout:GridData span="XL2 L2 M2 S2" />
+											<layout:GridData span="XL3 L3 M3 S3" />
 										</layoutData>
 									</Text>
 									<Label text="{i18n>UserSeparatorTextLable}" />
@@ -216,13 +212,13 @@
 								labelSpanM="2"
 								labelSpanS="2"
 								adjustLabelSpan="false"
-								emptySpanXL="6"
-								emptySpanL="6"
-								emptySpanM="6"
-								emptySpanS="6"
-								columnsXL="1"
-								columnsL="1"
-								columnsM="1"
+								emptySpanXL="4"
+								emptySpanL="4"
+								emptySpanM="4"
+								emptySpanS="4"
+								columnsXL="2"
+								columnsL="2"
+								columnsM="2"
 								singleContainerFullSize="false">
 								<form:content>
 									<Label text="{i18n>EmailTypeTextLable}" required="true" />
@@ -285,20 +281,20 @@
 						</WizardStep>
 					</Wizard>
 				</content>
-					<footer>
-						<OverflowToolbar>
-							<ToolbarSpacer/>
-							<Button 
-								text="{i18n>SaveButton}" 
-								press="onSave" 
-								visible="{partnerView>/saveButtonVisible}"
-								enabled="{partnerView>/saveButtonEnabled}"
-								type="Accept" />
-							<Button 
-								text="{i18n>CancelButton}" 
-								press="onCancel" />
-						</OverflowToolbar>
-					</footer>
+				<footer>
+					<OverflowToolbar>
+						<ToolbarSpacer/>
+						<Button 
+							text="{i18n>SaveButton}" 
+							press="onSave" 
+							visible="{partnerView>/saveButtonVisible}"
+							enabled="{partnerView>/saveButtonEnabled}"
+							type="Accept" />
+						<Button 
+							text="{i18n>CancelButton}" 
+							press="onCancel" />
+					</OverflowToolbar>
+				</footer>
 			</Page>
 		</pages>
 	</NavContainer>

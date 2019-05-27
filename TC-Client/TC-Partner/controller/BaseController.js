@@ -71,18 +71,18 @@ sap.ui.define([
                         "URL" : {
                             "protocol" : "http:",
                             "hostname" : "10.55.179.206",
-                            "port" : "5000"
+                            "port" : "3000"
                         },
                         "methodes" : {
                             "getSetupData" : "partner/getsetupdata",
+                            "saveSldUrl" : "partner/saveSldURL",
                             "saveSetupData" : "partner/setup",
-                            "getSldData" : "partner/getSLDData",
+                            "acs" : "partner/acs",
                             "sendSldLogin" : "partner/Login",
                             "getServiceLayerData" : "partner/getSLdata",
                             "sendServiceLayerLogin" : "partner/saveSLdata",
                             "getPartnerData" : "partner/getPartnerData",
-                            "getPartnerCombos" : "partner/independentParameters",
-                            "getServiceUnitCombos" : "partner/{0}/dependentParameters",
+                            "getPartnerCombos" : "partner/allParameters",
                             "getLocalSettingCombos" : "partner/serviceunit={0}/LS={1}",
                             "savePartnerData" : "partner/savePartnerData",
                             "getPublicCloudData" : "partner/getPublicCloudData",
@@ -134,16 +134,62 @@ sap.ui.define([
         },
 
         getErrorTextUser : function (errCode) {
-			let textReturn = this._bundle.getText("NoErrorMessage");
+			let textReturn = "";
 			if (errCode) {
 				let textId = "ErrorTextUser" + errCode;
 				textReturn = this._bundle.getText(textId);
 				if (textId === textReturn) {
-					textReturn = this._bundle.getText("NoErrorMessage");
+					textReturn = "";
 				}
 			}
 			return textReturn;
-        }
+        },
+
+        setSessionCookie : function (cValue) {
+            document.cookie = "JSESSIONID=" + cValue + ";" + ";path=/";
+        },
+
+        isSamlRequest : function (data) {
+            return ((this.isKeyOK(data, 'result', 'object')) && (this.isKeyOK(data.result, 'SAML', 'string')));
+        },
+
+        handleSsoRequest : function (data) {
+            if ((this.isKeyOK(data, 'cookie', 'object')) && (this.isKeyOK(data.cookie, 'JSESSIONID', 'string'))) {
+                this.setSessionCookie(data.cookie.JSESSIONID);
+            }
+            let samlRequest = data.result.SAML;
+            let decodedRequest = window.atob(samlRequest);
+            let startIndex = decodedRequest.indexOf('Destination="') + 'Destination="'.length;
+            let endIndex = decodedRequest.indexOf('"', startIndex);
+            let destination = decodedRequest.substr(startIndex, endIndex - startIndex);
+            let acs = 'AssertionConsumerServiceURL="' + this.getServerURL() + this.getConfModel().getProperty("/server/methodes/acs") + '"';
+            let issuer = "<ns2:Issuer>" + window.location.href + "</ns2:Issuer>";
+            decodedRequest = decodedRequest.replace('AssertionConsumerServiceURL=""', acs);
+            decodedRequest = decodedRequest.replace("<ns2:Issuer/>", issuer);
+            let newSamlRequest = window.btoa(decodedRequest);
+            this.ssoRequest(newSamlRequest, destination);
+        },
+
+        ssoRequest : function (samlRequest, destination) {
+            let form = document.createElement("form");
+            form.setAttribute("method", "post");
+            form.setAttribute("action", destination);
+            
+            let hiddenField1 = document.createElement("input");
+            hiddenField1.setAttribute("type", "hidden");
+            hiddenField1.setAttribute("name", "SAMLRequest");
+            hiddenField1.setAttribute("value", samlRequest);
+            form.appendChild(hiddenField1);
+            
+            let hiddenField2 = document.createElement("input");
+            hiddenField2.setAttribute("type", "hidden");
+            hiddenField2.setAttribute("name", "RelayState");
+            hiddenField2.setAttribute("value", "ROLE_ADMIN");
+            form.appendChild(hiddenField2);
+            
+            document.body.appendChild(form);
+            form.submit();
+        },
 
     });
 

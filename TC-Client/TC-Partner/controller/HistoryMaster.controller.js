@@ -61,8 +61,12 @@ sap.ui.define([
             $.ajax({
                 url: reqURL,
                 type: 'POST',
-				dataType: 'json',
-				contentType: "application/json; charset=utf-8",
+                xhrFields: {
+                    withCredentials: true
+                },
+                crossDomain: true,
+                dataType: 'json',
+                contentType: "application/x-www-form-urlencoded",
                 data: JSON.stringify(data),
                 success: function(result){
 					this.handleGetTenantsHistorySuccess(result);
@@ -73,7 +77,15 @@ sap.ui.define([
               });
 		},
 
-		handleGetTenantsHistorySuccess : function (result) {
+		handleGetTenantsHistorySuccess : function (data) {
+            if (this.isSamlRequest(data)) {
+                this.handleSsoRequest(data);
+            } else {
+                this.setTenantsHistoryData(data);
+            }
+		},
+		
+		setTenantsHistoryData : function (result) {
 			let tempData = {};
 			tempData.Tenants = result;
 

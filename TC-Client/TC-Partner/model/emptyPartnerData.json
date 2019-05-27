@@ -5,12 +5,14 @@
          "SldUserName":"",
          "SldPassword":"",
          "Reseller_Id":null,
-         "Prefix": null,
-         "Separator": "",
          "EmailServerType":"",
          "EmailUsername":"",
          "EmailPassword":"",
-         "EmailSendTo":""
+         "EmailSendTo":"",
+         "Prefix": null,
+         "Separator": "",
+         "SLUrl":"",
+         "SLUserName":""
       }
    ],
    "Packages":[  
@@ -24,7 +26,6 @@
       {  
          "id":null,
          "Name":"",
-         "HostingUnit_Id":null,
          "CreationMethod":"Normal",
          "Country_Code":"",
          "BackupPackage":"",
@@ -75,6 +76,14 @@
          "TemplateId":null,
          "User_Id":null,
          "LicenseType":""
+      }
+   ],
+   "Templates_ServiceUnits":[
+      {
+         "TemplateId":null,
+         "HostingUnit_Id": "",
+         "Order": null,
+         "MaxTenants": null
       }
    ]
 }

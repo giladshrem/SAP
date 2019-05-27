@@ -1,44 +1,214 @@
 <core:FragmentDefinition
 	xmlns="sap.m"
+	xmlns:form="sap.ui.layout.form"
+	xmlns:layout="sap.ui.layout"
 	xmlns:core="sap.ui.core">
-	<TableSelectDialog
-		noDataText="{i18n>SUD_NoDataText}"
-		title="{i18n>SUD_Title}"
-		search="handleServiceUnitsSearch"
-		confirm="handleServiceUnitsDialogConfirm"
-		items="{
-			path: 'PartnerCombos>/serviceunits/d/results',
-            sorter: {
-                path: 'Name'
-            }
-		}">
-		<ColumnListItem>
-			<Text text="{PartnerCombos>Name}" />
-			<Text text="{PartnerCombos>Purpose}" />
-			<Text text="{PartnerCombos>Version}" />
-			<Text text="{PartnerCombos>Status}" />
-		</ColumnListItem>
-		<columns>
-			<Column>
-				<header>
-					<Text text="{i18n>SUD_ColumnName}" />
-				</header>
-			</Column>
-			<Column>
-				<header>
-					<Text text="{i18n>SUD_ColumnPurpose}" />
-				</header>
-			</Column>
-			<Column>
-				<header>
-					<Text text="{i18n>SUD_ColumnVersion}" />
-				</header>
-			</Column>
-			<Column>
-				<header>
-					<Text text="{i18n>SUD_ColumnStatus}" />
-				</header>
-			</Column>
-		</columns>
-	</TableSelectDialog>
+	<Dialog 
+		class="sapUiSizeCompact"
+		title="{i18n>SUD_Title}" >
+		<content>
+			<Text text="{i18n>SUD_StepText}" class="sapUiSmallMargin"/>
+			<form:Form editable="true">
+				<form:layout>
+					<form:ResponsiveGridLayout
+						labelSpanXL="5"
+						labelSpanL="5"
+						labelSpanM="5"
+						labelSpanS="5"
+						adjustLabelSpan="false"
+						emptySpanXL="0"
+						emptySpanL="0"
+						emptySpanM="0"
+						emptySpanS="0"
+						columnsXL="2"
+						columnsL="2"
+						columnsM="2"
+						singleContainerFullSize="false" 
+					/>
+				</form:layout>
+				<form:formContainers>
+					<form:FormContainer>
+						<form:formElements>
+							<form:FormElement label="{i18n>SUD_ServerTypeTextLable}">
+								<form:fields>
+									<Select 
+										selectedKey="{templateView>/DialogServiceUnits/ServerType}"
+										change="onChangeServerType" >
+										<items>
+											<core:Item text="{i18n>SUD_ServerTypeSQL}" key="SQL"/>
+											<core:Item text="{i18n>SUD_ServerTypeHANA}" key="HANA"/>
+										</items>
+									</Select>
+								</form:fields>
+							</form:FormElement>
+							<form:FormElement label="{i18n>SUD_UseLoadBalancingTextLable}" >
+								<form:fields>
+									<Select 
+										enabled="{templateView>/DialogServiceUnits/UseLoadBalancingEnabled}" 
+										selectedKey="{templateView>/DialogServiceUnits/LoadBalancingEnabled}"
+										change="onChangeUseLoadBalancing" >
+										<items>
+											<core:Item text="{i18n>NoText}" key="N"/>
+											<core:Item text="{i18n>YesText}" key="Y"/>
+										</items>
+									</Select>
+								</form:fields>
+							</form:FormElement>
+							<form:FormElement label="{i18n>SUD_AlgorithmTextLable}" >
+								<form:fields>
+									<Select 
+										enabled="{templateView>/DialogServiceUnits/AlgorithmEnabled}"
+										selectedKey="{templateView>/DialogServiceUnits/Algorithm}" 
+										change="onChangeAlgorithm">
+										<items>
+											<core:Item text="{i18n>SUD_LeastTenantsAlgorithm}" key="L"/>
+											<core:Item text="{i18n>SUD_RoundRobinAlgorithm}" key="R"/>
+										</items>
+									</Select>
+								</form:fields>		
+							</form:FormElement>
+						</form:formElements>
+					</form:FormContainer>
+					<form:FormContainer>
+						<form:formElements>
+							<form:FormElement>
+									<Text text=""/>
+							</form:FormElement>
+							<form:FormElement>
+									<Text text=""/>
+							</form:FormElement>
+							<form:FormElement>
+									<Text text="{templateView>/DialogServiceUnits/AlgorithmText}"/>
+							</form:FormElement>
+						</form:formElements>
+					</form:FormContainer>
+				</form:formContainers>
+			</form:Form>
+			<form:SimpleForm
+				editable="true"
+				layout="ResponsiveGridLayout"
+				singleContainerFullSize="true" >
+				<form:content>
+					<Table
+						id="idServiceUnitsTable"
+						class="sapUiMediumMarginBottom"
+						noDataText="{i18n>SUD_NoDataText}"
+						mode="MultiSelect"
+						selectionChange="onServiceUnitsTableSelectionChange"
+						items="{
+							path: 'templateView>/DialogServiceUnits/ServiceUnitsTable',
+							sorter: {
+								path: 'Name'
+							}
+						}">
+						<layoutData>
+							<layout:GridData span="XL12 L12 M12 S12" />
+						</layoutData>
+						<ColumnListItem selected="{templateView>Selected}">
+							<Text text="{templateView>Name}" />
+							<Text text="{templateView>NumTenants}" />
+							<Text text="{templateView>Purpose}" />
+							<Text text="{templateView>Version}" />
+							<Text text="{templateView>Status}" />
+						</ColumnListItem>
+						<columns>
+							<Column>
+								<header>
+									<Text text="{i18n>SUD_ColumnName}" />
+								</header>
+							</Column>
+							<Column>
+								<header>
+									<Text text="{i18n>SUD_ColumnNumTenants}" />
+								</header>
+							</Column>
+							<Column>
+								<header>
+									<Text text="{i18n>SUD_ColumnPurpose}" />
+								</header>
+							</Column>
+							<Column>
+								<header>
+									<Text text="{i18n>SUD_ColumnVersion}" />
+								</header>
+							</Column>
+							<Column>
+								<header>
+									<Text text="{i18n>SUD_ColumnStatus}" />
+								</header>
+							</Column>
+						</columns>
+					</Table>
+					<Table
+						id="idServiceUnitsSelected"
+						noDataText="{i18n>SUD_OrderNoDataText}"
+						mode="SingleSelectMaster"
+						selectionChange="onServiceUnitsSelectedSelectionChange"
+						items="{
+							path: 'templateView>/DialogServiceUnits/ServiceUnitsSelected',
+							sorter: {
+								path: 'Order'
+							}
+						}">
+						<layoutData>
+							<layout:GridData span="XL12 L12 M12 S12" />
+						</layoutData>
+						<headerToolbar>
+							<Toolbar>
+								<Title text="{i18n>SUD_ServiceUnitsOrderTextLable}" level="H2"/>
+								<ToolbarSpacer></ToolbarSpacer>
+								<Button	
+									icon="sap-icon://navigation-up-arrow"
+									enabled="{templateView>/DialogServiceUnits/MoveUpEnabled}"
+									press="onMoveUp" />
+								<Button	
+									icon="sap-icon://navigation-down-arrow"
+									enabled="{templateView>/DialogServiceUnits/MoveDownEnabled}"
+									press="onMoveDown" />
+							</Toolbar>
+						</headerToolbar>
+						<ColumnListItem >
+							<Text text="{templateView>Order}" />
+							<Text text="{templateView>Name}" />
+							<Text text="{templateView>NumTenants}" />
+							<Input 
+								value="{templateView>MaxTenants}"
+								liveChange="onLiveChangeMaxTenants" />
+						</ColumnListItem>
+						<columns>
+							<Column>
+								<header>
+									<Text text="{i18n>SUD_ColumnOrder}" />
+								</header>
+							</Column>
+							<Column>
+								<header>
+									<Text text="{i18n>SUD_ColumnName}" />
+								</header>
+							</Column>
+							<Column>
+								<header>
+									<Text text="{i18n>SUD_ColumnNumTenants}" />
+								</header>
+							</Column>
+							<Column>
+								<header>
+									<Text text="{i18n>SUD_ColumnMaxTenants}" />
+								</header>
+							</Column>
+						</columns>
+					</Table>
+				</form:content>
+			</form:SimpleForm>
+		</content>
+		<buttons>
+			<Button 
+				text="{i18n>SubmitButton}" 
+				enabled="{templateView>/DialogServiceUnits/SubmitEnabled}"
+				press="handleServiceUnitsDialogSubmit"/>
+			<Button 
+				text="{i18n>CancelButton}" 
+				press="handleServiceUnitsDialogClose"/>
+		</buttons>
+	</Dialog>
 </core:FragmentDefinition>

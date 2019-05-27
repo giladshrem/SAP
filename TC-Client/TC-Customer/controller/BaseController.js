@@ -70,9 +70,10 @@ sap.ui.define([
                         },
                         "methodes" : {
                             "sendSldLogin" : "Login",
-                            "validateUserName" : "CheckUser",
+                            "validateUserName" : "CheckUser={0}/OP={1}",
                             "saveUserData" : "saveCustomerData",
-                            "getPartnerGeneralData" : "getPartnerGeneralData"
+                            "getPartnerGeneralData" : "getPartnerGeneralData",
+                            "getPartnerServiceLayerData" : "getPartnerServiceLayerData"
                         }
                     },
                     "nextPage" : "/TC-Customer/PartnerComplete.html"
@@ -94,6 +95,12 @@ sap.ui.define([
                         + this.getConfModel().getProperty("/server/URL/path") + "/";
             }
             return this._serverURL;
+        },
+
+        getRequestURL : function (methodKey) {
+            let methodName = this.getConfModel().getProperty(methodKey);
+            let reqURL = this.getServerURL() + methodName;
+            return reqURL;
         },
 
         isLowerSldVersion : function(testVersion, baseVersion) {

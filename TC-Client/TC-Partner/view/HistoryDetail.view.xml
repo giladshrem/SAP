@@ -35,10 +35,12 @@
 		</headerTitle>
         <headerContent >
                 <layout:VerticalLayout width="33%">
-                    <m:ObjectStatus 
-                        title="{i18n>CustomerNameTextLable}" 
-                        text="{customerDataModel>/CustomerDtl/0/CustomerName}" 
-                        class="sapUiTinyMarginBottom" />
+                    <layout:HorizontalLayout class="sapUiTinyMarginBottom">
+                        <m:Label text="{i18n>CustomerNameTextLable}: " />
+                        <m:Link 
+                            text="{customerDataModel>/CustomerDtl/0/CustomerName}"
+                            press="handlePopoverCompanyContactPress" />
+                    </layout:HorizontalLayout>
                     <m:ObjectStatus 
                         title="{i18n>TenantNameTextLable}" 
                         text="{customerDataModel>/CustomerDtl/0/TenantName}"
@@ -125,7 +127,7 @@
 								columnsL="2"
 								columnsM="2">
 								<form:content>
-                                    <core:Title text="" />
+                                    <core:Title />
 									<m:Label text="{i18n>LicenseFileTextLable}"/>
 									<m:Text text="{customerDataModel>/CustomerDtl/0/License_FileName}"/>
                                     <m:Label text="{i18n>LicensePolicyTextLable}"/>
@@ -137,7 +139,7 @@
 									<m:Text text="{historyDetailView>/CreationMethodText}"/>
 									<m:Label text="{i18n>PackageBackupNameTextLable}"/>
 									<m:Text text="{customerDataModel>/CustomerDtl/0/BackupPackageName}"/>
-                                    <core:Title text="" />
+                                    <core:Title />
 									<m:Label text="{i18n>LocalSettingsTextLable}"/>
 									<m:Text text="{customerDataModel>/CustomerDtl/0/LocalSettingsName}"/>
                                     <m:Label text="{i18n>ChartOfAccountTextLable}"/>
