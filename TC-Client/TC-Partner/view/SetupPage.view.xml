@@ -2,7 +2,8 @@
 	controllerName="oem-partner.controller.SetupPage"
 	xmlns="sap.m"
     xmlns:mvc="sap.ui.core.mvc"
-	xmlns:form="sap.ui.layout.form">
+	xmlns:form="sap.ui.layout.form"
+	xmlns:core="sap.ui.core">
 	<NavContainer id="setupNavContainer">
 		<pages>
 			<Page 
@@ -13,9 +14,96 @@
 						id="SetupWizard"
 						complete="wizardCompletedHandler">
 						<WizardStep 
+							title="{i18n>SldSetupStepTitle}"
+							validated="{setupView>/sldSetupStepValidated}"
+							icon="sap-icon://action-settings" >
+							<Text text="{i18n>SldSetupStepText}" />
+							<form:SimpleForm
+								editable="true"
+								layout="ResponsiveGridLayout"
+								labelSpanXL="2"
+								labelSpanL="2"
+								labelSpanM="2"
+								labelSpanS="2"
+								adjustLabelSpan="false"
+								emptySpanXL="4"
+								emptySpanL="4"
+								emptySpanM="4"
+								emptySpanS="4"
+								columnsXL="2"
+								columnsL="2"
+								columnsM="2"
+								singleContainerFullSize="false">
+								<form:content>
+									<Label text="{i18n>SldURLTextLable}" required="true" />
+									<Input 
+										value="{setupData>/sldURL}" 
+										liveChange="validateSldURL"
+										valueState="{setupView>/sldURLVS}"
+										valueStateText="{i18n>SLDURLvalueStateText}"
+										placeholder="{i18n>SLDURLplaceholderText}" />
+								</form:content>
+							</form:SimpleForm>
+							<Button 
+								text="{i18n>LoginButton}" 
+								press="onSldUrlLogin" 
+								visible="{setupView>/loginSldUrlButtonVisible}" 
+								type="Accept" />
+						</WizardStep>
+						<WizardStep 
+							title="{i18n>SldCrdtStepTitle}"
+							validated="{setupView>/tokenSetupStepValidated}"
+							icon="sap-icon://action-settings" >
+							<Text text="{i18n>SldCrdtStepText}" />
+							<form:SimpleForm
+								editable="true"
+								layout="ResponsiveGridLayout"
+								labelSpanXL="2"
+								labelSpanL="2"
+								labelSpanM="2"
+								labelSpanS="2"
+								adjustLabelSpan="false"
+								emptySpanXL="4"
+								emptySpanL="4"
+								emptySpanM="4"
+								emptySpanS="4"
+								columnsXL="2"
+								columnsL="2"
+								columnsM="2"
+								singleContainerFullSize="false">
+								<form:content>
+									<Label 
+										text="{i18n>UsernameTextLable}" 
+										required="true"/>
+									<Input 
+										value="{sldData>/SldUserName}"
+										valueState="{setupView>/SldUserNameVS}"
+										valueStateText="{i18n>usernameValueStateText}"
+										placeholder="{i18n>usernamePlaceholderText}"
+										liveChange="validateSldUserName"/>
+									<Label 
+										text="{i18n>PasswordTextLable}" 
+										required="true"/>
+									<Input 
+										value="{sldData>/SldPassword}"
+										valueState="{setupView>/SldPasswordVS}"
+										valueStateText="{i18n>passwordValueStateText}"
+										placeholder="{i18n>passwordPlaceholderText}"
+										liveChange="validateSldPassword"
+										type="Password" />
+								</form:content>
+							</form:SimpleForm>
+							<Button 
+								text="{i18n>LoginButton}" 
+								press="onSldCrdtLogin" 
+								visible="{setupView>/loginSldCrdtButtonVisible}" 
+								type="Accept" />
+						</WizardStep>
+						<WizardStep 
 							title="{i18n>DbSetupStepTitle}"
 							validated="{setupView>/dbSetupStepValidated}"
-							icon="sap-icon://action-settings" >
+							icon="sap-icon://action-settings"
+							activate="onActivateDbSetupStep" >
 							<Text text="{i18n>DbSetupStepText}" />
 							<form:SimpleForm
 								editable="true"
@@ -25,13 +113,13 @@
 								labelSpanM="2"
 								labelSpanS="2"
 								adjustLabelSpan="false"
-								emptySpanXL="6"
-								emptySpanL="6"
-								emptySpanM="6"
-								emptySpanS="6"
-								columnsXL="1"
-								columnsL="1"
-								columnsM="1"
+								emptySpanXL="4"
+								emptySpanL="4"
+								emptySpanM="4"
+								emptySpanS="4"
+								columnsXL="2"
+								columnsL="2"
+								columnsM="2"
 								singleContainerFullSize="false">
 								<form:content>
 									<Label text="{i18n>DbServerTextLable}" required="true" />
@@ -64,64 +152,6 @@
 								type="Accept" />
 						</WizardStep>
 						<WizardStep 
-							title="{i18n>SLDStepTitle}"
-							validated="{setupView>/sldSetupStepValidated}"
-							icon="sap-icon://action-settings" >
-							<Text text="{i18n>SLDStepText}" />
-							<form:SimpleForm
-								editable="true"
-								layout="ResponsiveGridLayout"
-								labelSpanXL="5"
-								labelSpanL="5"
-								labelSpanM="5"
-								labelSpanS="5"
-								adjustLabelSpan="false"
-								emptySpanXL="0"
-								emptySpanL="0"
-								emptySpanM="0"
-								emptySpanS="0"
-								columnsXL="2"
-								columnsL="2"
-								columnsM="2"
-								singleContainerFullSize="false">
-								<form:content>
-									<Label 
-										text="{i18n>SLDURLTextLable}" 
-										required="true" />
-									<Input 
-										value="{sldData>/SldUrl}"
-										valueState="{setupView>/SldUrlVS}"
-										valueStateText="{i18n>SLDURLvalueStateText}"
-										placeholder="{i18n>SLDURLplaceholderText}"
-										liveChange="validateSldUrl"/>
-									<Label 
-										text="{i18n>UsernameTextLable}" 
-										required="true"/>
-									<Input 
-										value="{sldData>/SldUserName}"
-										valueState="{setupView>/SldUserNameVS}"
-										valueStateText="{i18n>usernameValueStateText}"
-										placeholder="{i18n>usernamePlaceholderText}"
-										liveChange="validateSldUserName"/>
-									<Label 
-										text="{i18n>PasswordTextLable}" 
-										required="true"/>
-									<Input 
-										value="{sldData>/SldPassword}"
-										valueState="{setupView>/SldPasswordVS}"
-										valueStateText="{i18n>passwordValueStateText}"
-										placeholder="{i18n>passwordPlaceholderText}"
-										liveChange="validateSldPassword"
-										type="Password" />
-								</form:content>
-							</form:SimpleForm>
-							<Button 
-								text="{i18n>LoginButton}" 
-								press="onSldLogin" 
-								visible="{setupView>/LoginSldButtonVisible}" 
-								type="Accept" />
-						</WizardStep>
-						<WizardStep 
 							title="{i18n>ServiceLayerStepTitle}"
 							validated="{setupView>/ServiceLayerSetupStepValidated}"
 							icon="sap-icon://action-settings" 
@@ -130,15 +160,15 @@
 							<form:SimpleForm
 								editable="true"
 								layout="ResponsiveGridLayout"
-								labelSpanXL="5"
-								labelSpanL="5"
-								labelSpanM="5"
-								labelSpanS="5"
+								labelSpanXL="2"
+								labelSpanL="2"
+								labelSpanM="2"
+								labelSpanS="2"
 								adjustLabelSpan="false"
-								emptySpanXL="0"
-								emptySpanL="0"
-								emptySpanM="0"
-								emptySpanS="0"
+								emptySpanXL="4"
+								emptySpanL="4"
+								emptySpanM="4"
+								emptySpanS="4"
 								columnsXL="2"
 								columnsL="2"
 								columnsM="2"
@@ -148,29 +178,22 @@
                                         text="{i18n>ServiceLayerTextCheckBox}" 
                                         selected="{setupView>/IsServiceLayer}" 
 										select="onSelectIsServiceLayer" />
-									<Label 
-										text="{i18n>ServiceLayerURLTextLable}"
-										enabled="{setupView>/IsServiceLayer}" />
-									<Input 
-										value="{serviceLayerData>/ServiceLayerUrl}"
-										valueState="{setupView>/ServiceLayerUrlVS}"
-										valueStateText="{i18n>ServiceLayerURLvalueStateText}"
-										placeholder="{i18n>ServiceLayerURLplaceholderText}"
-										liveChange="validateServiceLayerUrl"
-										enabled="{setupView>/IsServiceLayer}" />
-									<Label 
-										text="{i18n>ServiceLayerUsernameTextLable}" 
-										enabled="{setupView>/IsServiceLayer}" />
-									<Input 
-										value="{serviceLayerData>/ServiceLayerUserName}"
+									<Label text="{i18n>ServiceLayerUsernameTextLable}" />
+									<Select 
+										items="{
+													path: 'setupView>/ServiceLayerUsernames',
+													sorter: {
+														path: 'Name'
+													}
+												}"
+										selectedKey="{serviceLayerData>/ServiceLayerUserName}"
+										change="validateServiceLayerUserName"
 										valueState="{setupView>/ServiceLayerUserNameVS}"
 										valueStateText="{i18n>ServiceLayerUsernameValueStateText}"
-										placeholder="{i18n>ServiceLayerUsernamePlaceholderText}"
-										liveChange="validateServiceLayerUserName"
-										enabled="{setupView>/IsServiceLayer}" />
-									<Label 
-										text="{i18n>ServiceLayerPasswordTextLable}" 
-										enabled="{setupView>/IsServiceLayer}" />
+										enabled="{setupView>/IsServiceLayer}" >
+										<core:Item key="{setupView>Code}" text="{setupView>Name}"/>
+									</Select>
+									<Label text="{i18n>ServiceLayerPasswordTextLable}" />
 									<Input 
 										value="{serviceLayerData>/ServiceLayerPassword}"
 										valueState="{setupView>/ServiceLayerPasswordVS}"
@@ -182,13 +205,21 @@
 								</form:content>
 							</form:SimpleForm>
 							<Button 
-								text="{setupView>/ServiceLayerButtonText}" 
+								text="{i18n>SaveButton}" 
 								press="onServiceLayerLogin" 
 								visible="{setupView>/LoginServiceLayerButtonVisible}" 
 								type="Accept" />
 						</WizardStep>
-				</Wizard>
+					</Wizard>
 				</content>
+				<footer>
+					<OverflowToolbar>
+						<ToolbarSpacer/>
+						<Button 
+							text="{i18n>CancelButton}" 
+							press="onCancel" />
+					</OverflowToolbar>
+				</footer>
 			</Page>
 		</pages>
 	</NavContainer>
